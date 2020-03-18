@@ -59,6 +59,12 @@ private:
 
 	void Update(DX::StepTimer const& timer);
 
+	float Clamp(float x, float min, float max);
+
+	int prevMouseX = 0;
+	int prevMouseY = 0;
+	void LogMouseCoords(int x, int y);
+
 	void CreateDeviceDependentResources();
 	void CreateWindowSizeDependentResources();
 
@@ -78,8 +84,7 @@ private:
 	DirectX::SimpleMath::Vector3		m_camLookAt;
 	DirectX::SimpleMath::Vector3		m_camLookDirection;
 	DirectX::SimpleMath::Vector3		m_camRight;
-	float m_camRotRate;
-
+	
 	//control variables
 	bool m_grid;							//grid rendering on / off
 	// Device resources.

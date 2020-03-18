@@ -20,15 +20,14 @@ Game::Game()
     m_deviceResources->RegisterDeviceNotify(this);
 	m_displayList.clear();
 	
-	//initial Settings
-	//modes
+	// Initial Settings
+	// Modes
 	m_grid = false;
 
-	//functional
+	// Functional
 	m_movespeed = 0.30;
-	m_camRotRate = 3.0;
 
-	//camera
+	// Camera
 	m_camPosition.x = 0.0f;
 	m_camPosition.y = 3.7f;
 	m_camPosition.z = -3.5f;
@@ -117,7 +116,7 @@ void Game::SetGridState(bool state)
 // Executes the basic game loop.
 void Game::Tick(InputCommands *Input)
 {
-	//copy over the input commands so we have a local version to use elsewhere.
+	// Copy over the input commands so we have a local version to use elsewhere.
 	m_InputCommands = *Input;
     m_timer.Tick([&]()
     {
@@ -140,30 +139,50 @@ void Game::Tick(InputCommands *Input)
 // Updates the world.
 void Game::Update(DX::StepTimer const& timer)
 {
-	//TODO  any more complex than this, and the camera should be abstracted out to somewhere else
-	//camera motion is on a plane, so kill the 7 component of the look direction
+	// Camera motion is on a plane so kill the other seven deadly dimensions
 	Vector3 planarMotionVector = m_camLookDirection;
 	planarMotionVector.y = 0.0;
 
-	if (m_InputCommands.rotRight)
+	// Vertical camera controls
+	if (m_InputCommands.up)
 	{
-		m_camOrientation.y -= m_camRotRate;
+		m_camPosition.y += m_movespeed;
 	}
-	if (m_InputCommands.rotLeft)
+	if (m_InputCommands.down)
 	{
-		m_camOrientation.y += m_camRotRate;
+		m_camPosition.y -= m_movespeed;
 	}
 
-	//create look direction from Euler angles in m_camOrientation
-	m_camLookDirection.x = sin((m_camOrientation.y)*3.1415 / 180);
-	//m_camLookDirection.y = sin()
-	m_camLookDirection.z = cos((m_camOrientation.y)*3.1415 / 180);
+	// Update and log camera coords and delta 
+	int dx = m_InputCommands.x - prevMouseX;
+	int dy = m_InputCommands.y - prevMouseY;
+	prevMouseX = m_InputCommands.x;
+	prevMouseY = m_InputCommands.y;
+	LogMouseCoords(dx, dy);
+
+	// Some less annoying camera controls
+	if (m_InputCommands.mouseRight) {
+		if (dx != 0 || dy != 0) {
+			m_camOrientation.y += dx;
+			m_camOrientation.x -= dy;
+		}
+	}
+
+	// Clamp camera pitch within reasonable values
+	m_camOrientation.x = Clamp(m_camOrientation.x, -85.0f, 85.0f);
+
+	// Create look direction from Euler angles in m_camOrientation
+	float phi = (m_camOrientation.x) * 3.1415 / 180;
+	float theta = (m_camOrientation.y) * 3.1415 / 180;
+	m_camLookDirection.x = cos(theta) * cos(phi);
+	m_camLookDirection.y = sin(phi);
+	m_camLookDirection.z = sin(theta) * cos(phi);
 	m_camLookDirection.Normalize();
 
-	//create right vector from look Direction
+	// Create right vector from look Direction
 	m_camLookDirection.Cross(Vector3::UnitY, m_camRight);
 
-	//process input and update stuff
+	// Process input and update stuff
 	if (m_InputCommands.forward)
 	{	
 		m_camPosition += m_camLookDirection*m_movespeed;
@@ -181,10 +200,10 @@ void Game::Update(DX::StepTimer const& timer)
 		m_camPosition -= m_camRight*m_movespeed;
 	}
 
-	//update lookat point
+	// Update lookat point
 	m_camLookAt = m_camPosition + m_camLookDirection;
 
-	//apply camera vectors
+	// Apply camera vectors
     m_view = Matrix::CreateLookAt(m_camPosition, m_camLookAt, Vector3::UnitY);
 
     m_batchEffect->SetView(m_view);
@@ -218,6 +237,29 @@ void Game::Update(DX::StepTimer const& timer)
 #endif
 
    
+}
+
+float Game::Clamp(float x, float min, float max) {
+	if (x < min)
+		x = min;
+	else if (x > max)
+		x = max;
+	else
+		x = x;
+
+	return x;
+}
+
+void Game::LogMouseCoords(int x, int y)
+{
+	std::string s;
+	std::wstring ws;
+	LPCWSTR ls;
+
+	s = "[log] xPos: " + std::to_string(x) + ", yPos: " + std::to_string(y) + "\n";
+	ws = std::wstring(s.begin(), s.end());
+	ls = ws.c_str();
+	OutputDebugString(ls);
 }
 #pragma endregion
 
@@ -258,7 +300,7 @@ void Game::Render()
 		const XMVECTORF32 scale = { m_displayList[i].m_scale.x, m_displayList[i].m_scale.y, m_displayList[i].m_scale.z };
 		const XMVECTORF32 translate = { m_displayList[i].m_position.x, m_displayList[i].m_position.y, m_displayList[i].m_position.z };
 
-		//convert degrees into radians for rotation matrix
+		// Convert degrees into radians for rotation matrix
 		XMVECTOR rotate = Quaternion::CreateFromYawPitchRoll(m_displayList[i].m_orientation.y *3.1415 / 180,
 															m_displayList[i].m_orientation.x *3.1415 / 180,
 															m_displayList[i].m_orientation.z *3.1415 / 180);
@@ -277,7 +319,7 @@ void Game::Render()
 	context->RSSetState(m_states->CullNone());
 //	context->RSSetState(m_states->Wireframe());		//uncomment for wireframe
 
-	//Render the batch,  This is handled in the Display chunk becuase it has the potential to get complex
+	// Render the batch,  This is handled in the Display chunk becuase it has the potential to get complex
 	m_displayChunk.RenderBatch(m_deviceResources);
 
     m_deviceResources->Present();
@@ -396,31 +438,30 @@ void Game::BuildDisplayList(std::vector<SceneObject> * SceneGraph)
 		m_displayList.clear();		//if not, empty it
 	}
 
-	//for every item in the scenegraph
+	// For every item in the scenegraph
 	int numObjects = SceneGraph->size();
 	for (int i = 0; i < numObjects; i++)
 	{
-		
-		//create a temp display object that we will populate then append to the display list.
+		// Create a temp display object that we will populate then append to the display list.
 		DisplayObject newDisplayObject;
 		
-		//load model
+		// Load model
 		std::wstring modelwstr = StringToWCHART(SceneGraph->at(i).model_path);							//convect string to Wchar
 		newDisplayObject.m_model = Model::CreateFromCMO(device, modelwstr.c_str(), *m_fxFactory, true);	//get DXSDK to load model "False" for LH coordinate system (maya)
 
-		//Load Texture
+		// Load Texture
 		std::wstring texturewstr = StringToWCHART(SceneGraph->at(i).tex_diffuse_path);								//convect string to Wchar
 		HRESULT rs;
 		rs = CreateDDSTextureFromFile(device, texturewstr.c_str(), nullptr, &newDisplayObject.m_texture_diffuse);	//load tex into Shader resource
 
-		//if texture fails.  load error default
+		// If texture fails.  load error default
 		if (rs)
 		{
 			CreateDDSTextureFromFile(device, L"database/data/Error.dds", nullptr, &newDisplayObject.m_texture_diffuse);	//load tex into Shader resource
 		}
 
-		//apply new texture to models effect
-		newDisplayObject.m_model->UpdateEffects([&](IEffect* effect) //This uses a Lambda function,  if you dont understand it: Look it up.
+		// Apply new texture to models effect
+		newDisplayObject.m_model->UpdateEffects([&](IEffect* effect) // This uses a Lambda function,  if you dont understand it: Look it up.
 		{	
 			auto lights = dynamic_cast<BasicEffect*>(effect);
 			if (lights)
@@ -429,22 +470,22 @@ void Game::BuildDisplayList(std::vector<SceneObject> * SceneGraph)
 			}
 		});
 
-		//set position
+		// Set position
 		newDisplayObject.m_position.x = SceneGraph->at(i).posX;
 		newDisplayObject.m_position.y = SceneGraph->at(i).posY;
 		newDisplayObject.m_position.z = SceneGraph->at(i).posZ;
 		
-		//setorientation
+		// Setorientation
 		newDisplayObject.m_orientation.x = SceneGraph->at(i).rotX;
 		newDisplayObject.m_orientation.y = SceneGraph->at(i).rotY;
 		newDisplayObject.m_orientation.z = SceneGraph->at(i).rotZ;
 
-		//set scale
+		// Set scale
 		newDisplayObject.m_scale.x = SceneGraph->at(i).scaX;
 		newDisplayObject.m_scale.y = SceneGraph->at(i).scaY;
 		newDisplayObject.m_scale.z = SceneGraph->at(i).scaZ;
 
-		//set wireframe / render flags
+		// Set wireframe / render flags
 		newDisplayObject.m_render		= SceneGraph->at(i).editor_render;
 		newDisplayObject.m_wireframe	= SceneGraph->at(i).editor_wireframe;
 
