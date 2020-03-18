@@ -199,6 +199,12 @@ void Game::Update(DX::StepTimer const& timer)
 	{
 		m_camPosition -= m_camRight*m_movespeed;
 	}
+	if (m_InputCommands.lShift)
+	{
+		m_movespeed = 0.60;
+	}
+	else m_movespeed = 0.30;
+
 
 	// Update lookat point
 	m_camLookAt = m_camPosition + m_camLookDirection;

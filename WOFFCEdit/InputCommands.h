@@ -10,5 +10,6 @@ struct InputCommands
 	bool down;
 	bool mouseLeft;
 	bool mouseRight;
+	bool lShift;
 	int x, y;
 };

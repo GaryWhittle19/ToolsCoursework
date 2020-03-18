@@ -23,7 +23,6 @@ ToolMain::ToolMain()
 	m_toolInputCommands.y			= 0;
 }
 
-
 ToolMain::~ToolMain()
 {
 	sqlite3_close(m_databaseConnection);		//close the database connection
@@ -364,4 +363,10 @@ void ToolMain::UpdateInput(MSG * msg)
 		m_toolInputCommands.down = true;
 	}
 	else m_toolInputCommands.down = false;
+
+	if (GetKeyState(VK_SHIFT))
+	{
+		m_toolInputCommands.lShift = true;
+	}
+	else m_toolInputCommands.lShift = false;
 }
