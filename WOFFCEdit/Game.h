@@ -45,11 +45,14 @@ public:
 	void OnResuming();
 	void OnWindowSizeChanged(int width, int height);
 
-	//tool specific
+	// Tool specific
 	void BuildDisplayList(std::vector<SceneObject> * SceneGraph); //note vector passed by reference 
 	void BuildDisplayChunk(ChunkObject *SceneChunk);
 	void SaveDisplayChunk(ChunkObject *SceneChunk);	//saves geometry et al
 	void ClearDisplayList();
+
+	// Picking
+	int MousePicking(int window_x, int window_y);
 
 #ifdef DXTK_AUDIO
 	void NewAudioDevice();
@@ -59,11 +62,16 @@ private:
 
 	void Update(DX::StepTimer const& timer);
 
+	// Clamp x between min/max
 	float Clamp(float x, float min, float max);
 
+	// Mouse location on viewport and logging function for debugging etc.
 	int prevMouseX = 0;
 	int prevMouseY = 0;
 	void LogMouseCoords(int x, int y);
+
+	// Object selection
+	int selectedID = -1;
 
 	void CreateDeviceDependentResources();
 	void CreateWindowSizeDependentResources();

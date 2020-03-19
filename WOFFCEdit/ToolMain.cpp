@@ -290,6 +290,10 @@ void ToolMain::Tick(MSG *msg)
 
 	//Renderer Update Call
 	m_d3dRenderer.Tick(&m_toolInputCommands);
+	if (m_toolInputCommands.mouseLeft) {
+		m_selectedObject = m_d3dRenderer.MousePicking(m_width, m_height);
+		m_toolInputCommands.mouseLeft = false;
+	}
 }
 
 void ToolMain::UpdateInput(MSG * msg)
@@ -314,9 +318,10 @@ void ToolMain::UpdateInput(MSG * msg)
 		m_toolInputCommands.mouseLeft = true;
 		break;
 
-	case WM_LBUTTONUP:	
+		// Disabled for ease of picking implementation 
+	/*case WM_LBUTTONUP:	
 		m_toolInputCommands.mouseLeft = false;
-		break;
+		break;*/
 
 	case WM_RBUTTONDOWN:
 		m_toolInputCommands.mouseRight = true;
