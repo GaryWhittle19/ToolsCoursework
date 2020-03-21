@@ -2,6 +2,7 @@
 #include "resource.h"
 #include <vector>
 #include <sstream>
+#include "Debug.h"
 
 //
 //ToolMain Class
@@ -323,54 +324,27 @@ void ToolMain::UpdateInput(MSG * msg)
 		break;*/
 
 	case WM_RBUTTONDOWN:
+		Debug::Out("hi");
 		m_toolInputCommands.mouseRight = true;
 		break;
 
 	case WM_RBUTTONUP:
 		m_toolInputCommands.mouseRight = false;
 		break;
-
 	}
 
-	// Here we update all the actual app functionality that we want. This information will either be used int toolmain, or sent down to the renderer (camera movement etc)
-	// WASD movement
-	if (m_keyArray['W'])
-	{
-		m_toolInputCommands.forward = true;
-	}
-	else m_toolInputCommands.forward = false;
-	if (m_keyArray['S'])
-	{
-		m_toolInputCommands.back = true;
-	}
-	else m_toolInputCommands.back = false;
-	if (m_keyArray['A'])
-	{
-		m_toolInputCommands.left = true;
-	}
-	else m_toolInputCommands.left = false;
-	if (m_keyArray['D'])
-	{
-		m_toolInputCommands.right = true;
-	}
-	else m_toolInputCommands.right = false;
-
-	// Rotation
-	if (m_keyArray['E'])
-	{
-		m_toolInputCommands.up = true;
-	}
-	else m_toolInputCommands.up = false;
-	if (m_keyArray['Q'])
-	{
-		m_toolInputCommands.down = true;
-	}
-	else m_toolInputCommands.down = false;
+	// Movement
+	m_toolInputCommands.forward = m_keyArray['W'];
+	m_toolInputCommands.left = m_keyArray['A'];
+	m_toolInputCommands.back = m_keyArray['S'];
+	m_toolInputCommands.right = m_keyArray['D'];
+	m_toolInputCommands.up = m_keyArray['E'];
+	m_toolInputCommands.down = m_keyArray['Q'];
 
 	// Camera sprint
 	if (GetKeyState(VK_SHIFT) & 0x8000)	// & 0x8000 gives real-time key state
 	{
 		m_toolInputCommands.lShift = true;
 	}
-	else m_toolInputCommands.lShift = false; 
+	else m_toolInputCommands.lShift = false;
 }

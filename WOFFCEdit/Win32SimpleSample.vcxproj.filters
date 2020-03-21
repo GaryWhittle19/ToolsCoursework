@@ -108,6 +108,7 @@
     <ClInclude Include="SelectDialogue.h">
       <Filter>MFC</Filter>
     </ClInclude>
+    <ClInclude Include="Debug.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

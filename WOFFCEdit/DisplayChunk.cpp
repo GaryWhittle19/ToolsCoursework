@@ -1,6 +1,7 @@
 #include <string>
 #include "DisplayChunk.h"
 #include "Game.h"
+#include "Debug.h"
 
 
 using namespace DirectX;
@@ -165,7 +166,7 @@ void DisplayChunk::SaveHeightMap()
 
 void DisplayChunk::UpdateTerrain()
 {
-	//all this is doing is transferring the height from the heigtmap into the terrain geometry.
+	//all this is doing is transferring the height from the heightmap into the terrain geometry.
 	int index;
 	for (size_t i = 0; i < TERRAINRESOLUTION; i++)
 	{
@@ -176,8 +177,22 @@ void DisplayChunk::UpdateTerrain()
 		}
 	}
 	CalculateTerrainNormals();
-
 }
+
+void DisplayChunk::EditTerrain(int mouseX, int mouseY)
+{
+	int i, j;
+
+
+
+	
+	Debug::Out(std::to_string(m_terrainGeometry[i][j].position.y), "Y: ");
+}
+
+//void DisplayChunk::GaussianCircle(int size, float range, float mean)
+//{
+//
+//}
 
 void DisplayChunk::GenerateHeightmap()
 {
