@@ -7,7 +7,6 @@
 //ToolMain Class
 ToolMain::ToolMain()
 {
-
 	m_currentChunk = 0;		//default value
 	m_selectedObject = 0;	//initial selection ID
 	m_sceneGraph.clear();	//clear the vector for the scenegraph
@@ -340,7 +339,6 @@ void ToolMain::UpdateInput(MSG * msg)
 		m_toolInputCommands.forward = true;
 	}
 	else m_toolInputCommands.forward = false;
-	
 	if (m_keyArray['S'])
 	{
 		m_toolInputCommands.back = true;
@@ -351,12 +349,12 @@ void ToolMain::UpdateInput(MSG * msg)
 		m_toolInputCommands.left = true;
 	}
 	else m_toolInputCommands.left = false;
-
 	if (m_keyArray['D'])
 	{
 		m_toolInputCommands.right = true;
 	}
 	else m_toolInputCommands.right = false;
+
 	// Rotation
 	if (m_keyArray['E'])
 	{
@@ -369,7 +367,8 @@ void ToolMain::UpdateInput(MSG * msg)
 	}
 	else m_toolInputCommands.down = false;
 
-	if (GetKeyState(VK_SHIFT))
+	// Camera sprint
+	if (GetKeyState(VK_SHIFT) & 0x8000)	// & 0x8000 gives real-time key state
 	{
 		m_toolInputCommands.lShift = true;
 	}
