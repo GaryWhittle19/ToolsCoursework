@@ -372,5 +372,5 @@ void ToolMain::UpdateInput(MSG * msg)
 	{
 		m_toolInputCommands.lShift = true;
 	}
-	else m_toolInputCommands.lShift = false;
+	else m_toolInputCommands.lShift = false; 
 }
