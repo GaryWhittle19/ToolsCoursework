@@ -85,6 +85,8 @@ void Game::Initialize(HWND window, int width, int height)
 	m_deviceResources->CreateWindowSizeDependentResources();
 	CreateWindowSizeDependentResources();
 
+	GetClientRect(window, &m_ScreenDimensions);
+
 #ifdef DXTK_AUDIO
 	// Create DirectXTK for Audio objects
 	AUDIO_ENGINE_FLAGS eflags = AudioEngine_Default;
@@ -141,26 +143,18 @@ void Game::Tick(InputCommands* Input)
 // Updates the world.
 void Game::Update(DX::StepTimer const& timer)
 {
+	//
+	m_displayChunk.EditTerrain(m_InputCommands.x, m_InputCommands.y, m_ScreenDimensions.right, m_ScreenDimensions.bottom, fov);
+
 	// Camera motion is on a plane so kill the other seven deadly dimensions
 	Vector3 planarMotionVector = m_camLookDirection;
 	planarMotionVector.y = 0.0;
 
-	// Vertical camera controls
-	if (m_InputCommands.up)
-	{
-		m_camPosition.y += m_movespeed;
-	}
-	if (m_InputCommands.down)
-	{
-		m_camPosition.y -= m_movespeed;
-	}
-
-	// Update and log camera coords and delta 
+	// Update and log mouse coords and delta 
 	int dx = m_InputCommands.x - prevMouseX;
 	int dy = m_InputCommands.y - prevMouseY;
 	prevMouseX = m_InputCommands.x;
 	prevMouseY = m_InputCommands.y;
-	//LogMouseCoords(dx, dy);
 
 	// Some less annoying camera controls
 	if (m_InputCommands.mouseRight) {
@@ -185,28 +179,15 @@ void Game::Update(DX::StepTimer const& timer)
 	m_camLookDirection.Cross(Vector3::UnitY, m_camRight);
 
 	// Process input and update stuff
-	if (m_InputCommands.forward)
-	{
-		m_camPosition += m_camLookDirection * m_movespeed;
-	}
-	if (m_InputCommands.back)
-	{
-		m_camPosition -= m_camLookDirection * m_movespeed;
-	}
-	if (m_InputCommands.right)
-	{
-		m_camPosition += m_camRight * m_movespeed;
-	}
-	if (m_InputCommands.left)
-	{
-		m_camPosition -= m_camRight * m_movespeed;
-	}
-	if (m_InputCommands.lShift)
-	{
-		m_movespeed = 0.60;
-	}
+	if (m_InputCommands.lShift) { m_movespeed = 0.60; }
 	else m_movespeed = 0.30;
-
+	if (m_InputCommands.forward) {m_camPosition += m_camLookDirection * m_movespeed;}
+	if (m_InputCommands.back){m_camPosition -= m_camLookDirection * m_movespeed;}
+	if (m_InputCommands.right){m_camPosition += m_camRight * m_movespeed;}
+	if (m_InputCommands.left){m_camPosition -= m_camRight * m_movespeed;}
+	if (m_InputCommands.up) { m_camPosition.y += m_movespeed; }
+	if (m_InputCommands.down) { m_camPosition.y -= m_movespeed; }
+	
 	// Update lookat point
 	m_camLookAt = m_camPosition + m_camLookDirection;
 
@@ -242,8 +223,6 @@ void Game::Update(DX::StepTimer const& timer)
 		}
 	}
 #endif
-
-
 }
 
 float Game::Clamp(float x, float min, float max) {
@@ -255,18 +234,6 @@ float Game::Clamp(float x, float min, float max) {
 		x = x;
 
 	return x;
-}
-
-void Game::LogMouseCoords(int x, int y)
-{
-	std::string s;
-	std::wstring ws;
-	LPCWSTR ls;
-
-	s = "[log] xPos: " + std::to_string(x) + ", yPos: " + std::to_string(y) + "\n";
-	ws = std::wstring(s.begin(), s.end());
-	ls = ws.c_str();
-	OutputDebugString(ls);
 }
 
 int Game::MousePicking(int window_x, int window_y)
@@ -653,7 +620,7 @@ void Game::CreateWindowSizeDependentResources()
 {
 	auto size = m_deviceResources->GetOutputSize();
 	float aspectRatio = float(size.right) / float(size.bottom);
-	float fovAngleY = 70.0f * XM_PI / 180.0f;
+	float fovAngleY = fov * XM_PI / 180.0f;
 
 	// This is a simple example of change that can be made when the app is in
 	// portrait or snapped view.
@@ -699,7 +666,6 @@ void Game::OnDeviceRestored()
 
 std::wstring StringToWCHART(std::string s)
 {
-
 	int len;
 	int slength = (int)s.length() + 1;
 	len = MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, 0, 0);

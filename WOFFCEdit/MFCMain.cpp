@@ -19,7 +19,7 @@ BOOL MFCMain::InitInstance()
 	m_frame->Create(	NULL,
 					_T("Planet Of Warfare Editor"),
 					WS_OVERLAPPEDWINDOW,
-					CRect(50, 50, 1024, 768),
+					CRect(0, 0, 1024, 768),
 					NULL,
 					NULL,
 					0,

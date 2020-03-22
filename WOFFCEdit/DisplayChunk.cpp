@@ -179,14 +179,49 @@ void DisplayChunk::UpdateTerrain()
 	CalculateTerrainNormals();
 }
 
-void DisplayChunk::EditTerrain(int mouseX, int mouseY)
+void DisplayChunk::EditTerrain(float mX, float mY, float w, float h, float fov)
 {
-	int i, j;
+	// [ - - - - - - - - - - ]
+		// Convert screen coordinates, in pixels, to normalized coordinates, 
+		// with an origin at the center of the viewport and values on each axis 
+		// ranging from -1.0 to 1.0.
 
 
+	float aspect = w / h;								// Aspect ratio		
+	float dx = (mX / (w/2) - 1.0f) / aspect;			// Normalize screen coordinates...
+	float dy = 1.0f - mY / (h/2);
+	//Debug::Out(std::to_string(dx), "Normalized x: ");	// Debug out
+	//Debug::Out(std::to_string(dy), "Normalized y: ");
 
+	// [ - - - - - - - - - - ]
+		// Scale the normalized screen coordinates to the field of view.  
+		// The X and Y values attained will define the slope of the ray 
+		// away from the center of the frustum in relation to depth.
 	
-	Debug::Out(std::to_string(m_terrainGeometry[i][j].position.y), "Y: ");
+
+	float tangent;										// Calculate tangent
+	tangent = tanf(fov * 0.5f);
+	dx = tangent * dx;
+	dy = tangent * dy;
+	Debug::Out(std::to_string(dx), "Corrected x: ");	// Debug out
+	Debug::Out(std::to_string(dy), "Corrected y: ");
+
+	// [ - - - - - - - - - - ]
+		// Calculate two points on the line that correspond to the near and far clipping planes.  These will be expressed in 3D coordinates in view space.
+		
+		
+		
+		
+		
+		
+		
+		// Create a matrix that expresses an inverse of the current view transformation.
+		// Multiply these coordinates with the inverse matrix to transform them into world space.
+	
+
+	// i, j of terrain
+	//int i, j;
+	//Debug::Out(std::to_string(m_terrainGeometry[i][j].position.y), "Y: ");
 }
 
 //void DisplayChunk::GaussianCircle(int size, float range, float mean)
@@ -203,8 +238,6 @@ void DisplayChunk::CalculateTerrainNormals()
 {
 	int index1, index2, index3, index4;
 	DirectX::SimpleMath::Vector3 upDownVector, leftRightVector, normalVector;
-
-
 
 	for (int i = 0; i<(TERRAINRESOLUTION - 1); i++)
 	{

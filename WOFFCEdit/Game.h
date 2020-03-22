@@ -68,13 +68,15 @@ private:
 	// Mouse location on viewport and logging function for debugging etc.
 	int prevMouseX = 0;
 	int prevMouseY = 0;
-	void LogMouseCoords(int x, int y);
 
 	// Object selection
 	int selectedID = -1;
 
+	//
 	void CreateDeviceDependentResources();
 	void CreateWindowSizeDependentResources();
+	//
+	float fov = 70.0f;
 
 	void XM_CALLCONV DrawGrid(DirectX::FXMVECTOR xAxis, DirectX::FXMVECTOR yAxis, DirectX::FXMVECTOR origin, size_t xdivs, size_t ydivs, DirectX::GXMVECTOR color);
 
@@ -139,7 +141,7 @@ private:
     DirectX::SimpleMath::Matrix                                             m_view;
     DirectX::SimpleMath::Matrix                                             m_projection;
 
-
+	RECT m_ScreenDimensions;
 };
 
 std::wstring StringToWCHART(std::string s);
