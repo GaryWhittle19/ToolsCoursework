@@ -27,6 +27,4 @@ public:
 	int tex_splat_2_tiling;
 	int tex_splat_3_tiling;
 	int tex_splat_4_tiling;
-
 };
-

@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "DebugDraw.h"
+#include "SimpleMath.h"
 #include "DeviceResources.h"
 #include "StepTimer.h"
 #include "SceneObject.h"
@@ -49,10 +51,13 @@ public:
 	void BuildDisplayList(std::vector<SceneObject> * SceneGraph); //note vector passed by reference 
 	void BuildDisplayChunk(ChunkObject *SceneChunk);
 	void SaveDisplayChunk(ChunkObject *SceneChunk);	//saves geometry et al
-	void ClearDisplayList();
+	//void ClearDisplayList();
 
 	// Picking
-	int MousePicking(int window_x, int window_y);
+	DirectX::XMVECTOR GetPickingVector(int window_x, int window_y, bool visualize);
+	int MousePicking(int window_x, int window_y, bool visua);
+	DirectX::SimpleMath::Ray PickingRay;
+	bool visualize_PickingRay = false;
 
 #ifdef DXTK_AUDIO
 	void NewAudioDevice();
@@ -76,9 +81,13 @@ private:
 	void CreateDeviceDependentResources();
 	void CreateWindowSizeDependentResources();
 	//
-	float fov = 70.0f;
+	float _fov = 70.0f;
+	float _near = 0.01f;
+	float _far = 1000.0f;
 
 	void XM_CALLCONV DrawGrid(DirectX::FXMVECTOR xAxis, DirectX::FXMVECTOR yAxis, DirectX::FXMVECTOR origin, size_t xdivs, size_t ydivs, DirectX::GXMVECTOR color);
+
+	void RenderRay(ID3D11DeviceContext* context);
 
 	//tool specific
 	std::vector<DisplayObject>			m_displayList;

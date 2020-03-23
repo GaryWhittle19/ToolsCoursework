@@ -291,7 +291,9 @@ void ToolMain::Tick(MSG *msg)
 	//Renderer Update Call
 	m_d3dRenderer.Tick(&m_toolInputCommands);
 	if (m_toolInputCommands.mouseLeft) {
-		m_selectedObject = m_d3dRenderer.MousePicking(m_width, m_height);
+		m_pickingVector = m_d3dRenderer.GetPickingVector(m_width, m_height, true);
+		m_selectedObject = m_d3dRenderer.MousePicking(m_width, m_height, false);
+		//m_selectedTerrain = m_d3dRenderer.MouseEditing(m_pickingVector);
 		m_toolInputCommands.mouseLeft = false;
 	}
 }

@@ -16,7 +16,6 @@ using Microsoft::WRL::ComPtr;
 using std::numeric_limits;
 
 Game::Game()
-
 {
 	m_deviceResources = std::make_unique<DX::DeviceResources>();
 	m_deviceResources->RegisterDeviceNotify(this);
@@ -27,33 +26,24 @@ Game::Game()
 	m_grid = false;
 
 	// Functional
-	m_movespeed = 0.30;
+	m_movespeed = 0.05;
 
 	// Camera
 	m_camPosition.x = 0.0f;
-	m_camPosition.y = 3.7f;
-	m_camPosition.z = -3.5f;
-
+	m_camPosition.y = 0.0f;
+	m_camPosition.z = 0.0f;
 	m_camOrientation.x = 0;
 	m_camOrientation.y = 0;
 	m_camOrientation.z = 0;
-
 	m_camLookAt.x = 0.0f;
 	m_camLookAt.y = 0.0f;
 	m_camLookAt.z = 0.0f;
-
 	m_camLookDirection.x = 0.0f;
 	m_camLookDirection.y = 0.0f;
 	m_camLookDirection.z = 0.0f;
-
 	m_camRight.x = 0.0f;
 	m_camRight.y = 0.0f;
 	m_camRight.z = 0.0f;
-
-	m_camOrientation.x = 0.0f;
-	m_camOrientation.y = 0.0f;
-	m_camOrientation.z = 0.0f;
-
 }
 
 Game::~Game()
@@ -117,6 +107,10 @@ void Game::SetGridState(bool state)
 }
 
 #pragma region Frame Update
+
+
+
+
 // Executes the basic game loop.
 void Game::Tick(InputCommands* Input)
 {
@@ -143,9 +137,6 @@ void Game::Tick(InputCommands* Input)
 // Updates the world.
 void Game::Update(DX::StepTimer const& timer)
 {
-	//
-	m_displayChunk.EditTerrain(m_InputCommands.x, m_InputCommands.y, m_ScreenDimensions.right, m_ScreenDimensions.bottom, fov);
-
 	// Camera motion is on a plane so kill the other seven deadly dimensions
 	Vector3 planarMotionVector = m_camLookDirection;
 	planarMotionVector.y = 0.0;
@@ -179,21 +170,22 @@ void Game::Update(DX::StepTimer const& timer)
 	m_camLookDirection.Cross(Vector3::UnitY, m_camRight);
 
 	// Process input and update stuff
-	if (m_InputCommands.lShift) { m_movespeed = 0.60; }
-	else m_movespeed = 0.30;
-	if (m_InputCommands.forward) {m_camPosition += m_camLookDirection * m_movespeed;}
+	if (m_InputCommands.lShift) { m_movespeed = 0.30; }
+	else m_movespeed = 0.05;
+	if (m_InputCommands.forward){m_camPosition += m_camLookDirection * m_movespeed;}
 	if (m_InputCommands.back){m_camPosition -= m_camLookDirection * m_movespeed;}
 	if (m_InputCommands.right){m_camPosition += m_camRight * m_movespeed;}
 	if (m_InputCommands.left){m_camPosition -= m_camRight * m_movespeed;}
-	if (m_InputCommands.up) { m_camPosition.y += m_movespeed; }
-	if (m_InputCommands.down) { m_camPosition.y -= m_movespeed; }
+	if (m_InputCommands.up){m_camPosition.y += m_movespeed; }
+	if (m_InputCommands.down){m_camPosition.y -= m_movespeed; }
 	
 	// Update lookat point
 	m_camLookAt = m_camPosition + m_camLookDirection;
-
+	
 	// Apply camera vectors
 	m_view = Matrix::CreateLookAt(m_camPosition, m_camLookAt, Vector3::UnitY);
 
+	//
 	m_batchEffect->SetView(m_view);
 	m_batchEffect->SetWorld(Matrix::Identity);
 	m_displayChunk.m_terrainEffect->SetView(m_view);
@@ -236,8 +228,56 @@ float Game::Clamp(float x, float min, float max) {
 	return x;
 }
 
-int Game::MousePicking(int window_x, int window_y)
+DirectX::XMVECTOR Game::GetPickingVector(int window_x, int window_y, bool visualize)
 {
+	DirectX::XMVECTOR PickingVector;
+	float minimumDistance = std::numeric_limits<float>::max();
+
+	// Set up near and far planes of frustum with mouse X and mouse Y passed down from Toolmain. 
+	// They may look the same but note, the difference in Z
+	const XMVECTOR nearSource = XMVectorSet(m_InputCommands.x, m_InputCommands.y, 0.0f, 1.0f);
+	const XMVECTOR farSource = XMVectorSet(m_InputCommands.x, m_InputCommands.y, 1.0f, 1.0f);
+
+	DirectX::XMVECTOR defaultSca = XMVectorSet(1.0f, 1.0f, 1.0f, 1.0f);
+	DirectX::XMVECTOR defaultRot = Quaternion::Identity;
+	DirectX::XMVECTOR defaultTra = XMVectorSet(0.0f, 0.0f, 0.0f, 1.0f);
+
+	// Create set the matrix of the selected object in the world based on the translation, scale and rotation.
+	XMMATRIX local = m_world * XMMatrixTransformation(g_XMZero, Quaternion::Identity, defaultSca, g_XMZero, defaultRot, defaultTra);
+
+	// Unproject the points on the near and far plane, with respect to the matrix we just created.
+	XMVECTOR nearPoint = XMVector3Unproject(nearSource, 0.0f, 0.0f, window_x, window_y, m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_projection, m_view, local);
+	XMVECTOR farPoint = XMVector3Unproject(farSource, 0.0f, 0.0f, window_x, window_y, m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_projection, m_view, local);
+
+	// Turn the transformed points into our picking vector. 
+	PickingVector = farPoint - nearPoint;
+	PickingVector = XMVector3Normalize(PickingVector);
+
+	XMFLOAT3 ClosestTerrainPosition = XMFLOAT3(minimumDistance, minimumDistance, minimumDistance);
+
+	for (size_t i = 0; i < TERRAINRESOLUTION - 1; i++) {	//	looping through QUADS.  so we subtract one from the terrain array or it will try to draw a quad starting with the last vertex in each row. Which wont work
+		for (int j = 0; j < TERRAINRESOLUTION; j++)
+		{
+			
+
+			
+			
+		}
+	}
+
+	if (visualize) {
+		visualize_PickingRay = true;
+		PickingRay.position = m_camPosition;
+		PickingRay.direction = -PickingVector;
+	}
+
+	return PickingVector;
+}
+
+
+int Game::MousePicking(int window_x, int window_y, bool visualize)
+{
+	DirectX::XMVECTOR PickingVector;
 	float pickedDistance;
 	float minimumDistance = std::numeric_limits<float>::max();
 
@@ -266,14 +306,14 @@ int Game::MousePicking(int window_x, int window_y)
 		XMVECTOR farPoint = XMVector3Unproject(farSource, 0.0f, 0.0f, window_x, window_y, m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_projection, m_view, local);
 
 		// Turn the transformed points into our picking vector. 
-		XMVECTOR pickingVector = farPoint - nearPoint;
-		pickingVector = XMVector3Normalize(pickingVector);
+		PickingVector = farPoint - nearPoint;
+		PickingVector = XMVector3Normalize(PickingVector);
 
 		// Loop through mesh list for object
 		for (int y = 0; y < m_displayList[i].m_model.get()->meshes.size(); y++)
 		{
 			// Checking for ray intersection
-			if (m_displayList[i].m_model.get()->meshes[y]->boundingBox.Intersects(nearPoint, pickingVector, pickedDistance))
+			if (m_displayList[i].m_model.get()->meshes[y]->boundingBox.Intersects(nearPoint, PickingVector, pickedDistance))
 			{
 				if (pickedDistance < minimumDistance) {
 					minimumDistance = pickedDistance;
@@ -282,11 +322,26 @@ int Game::MousePicking(int window_x, int window_y)
 			}
 		}
 	}
+
+	if (visualize) {
+		visualize_PickingRay = true;
+		PickingRay.position = m_camPosition;
+		PickingRay.direction = -PickingVector;
+	}
+
 	return selectedID;
 }
+
+
+
+
 #pragma endregion
 
 #pragma region Frame Render
+
+
+
+
 // Draws the scene.
 void Game::Render()
 {
@@ -301,6 +356,8 @@ void Game::Render()
 	m_deviceResources->PIXBeginEvent(L"Render");
 	auto context = m_deviceResources->GetD3DDeviceContext();
 
+
+
 	if (m_grid)
 	{
 		// Draw procedurally generated dynamic grid
@@ -308,6 +365,7 @@ void Game::Render()
 		const XMVECTORF32 yaxis = { 0.f, 0.f, 512.f };
 		DrawGrid(xaxis, yaxis, g_XMZero, 512, 512, Colors::Gray);
 	}
+
 	//CAMERA POSITION ON HUD
 	m_sprites->Begin();
 	WCHAR   Buffer[256];
@@ -342,82 +400,155 @@ void Game::Render()
 	context->RSSetState(m_states->CullNone());
 	//	context->RSSetState(m_states->Wireframe());		//uncomment for wireframe
 
-		// Render the batch,  This is handled in the Display chunk becuase it has the potential to get complex
+	// Render the batch,  This is handled in the Display chunk becuase it has the potential to get complex
 	m_displayChunk.RenderBatch(m_deviceResources);
+
+	//
+	RenderRay(context);
 
 	m_deviceResources->Present();
 }
 
+
+
+
 // Helper method to clear the back buffers.
 void Game::Clear()
 {
-	m_deviceResources->PIXBeginEvent(L"Clear");
+m_deviceResources->PIXBeginEvent(L"Clear");
 
-	// Clear the views.
-	auto context = m_deviceResources->GetD3DDeviceContext();
-	auto renderTarget = m_deviceResources->GetBackBufferRenderTargetView();
-	auto depthStencil = m_deviceResources->GetDepthStencilView();
+// Clear the views.
+auto context = m_deviceResources->GetD3DDeviceContext();
+auto renderTarget = m_deviceResources->GetBackBufferRenderTargetView();
+auto depthStencil = m_deviceResources->GetDepthStencilView();
 
-	context->ClearRenderTargetView(renderTarget, Colors::CornflowerBlue);
-	context->ClearDepthStencilView(depthStencil, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-	context->OMSetRenderTargets(1, &renderTarget, depthStencil);
+context->ClearRenderTargetView(renderTarget, Colors::CornflowerBlue);
+context->ClearDepthStencilView(depthStencil, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+context->OMSetRenderTargets(1, &renderTarget, depthStencil);
 
-	// Set the viewport.
-	auto viewport = m_deviceResources->GetScreenViewport();
-	context->RSSetViewports(1, &viewport);
+// Set the viewport.
+auto viewport = m_deviceResources->GetScreenViewport();
+context->RSSetViewports(1, &viewport);
 
-	m_deviceResources->PIXEndEvent();
+m_deviceResources->PIXEndEvent();
 }
+
+
+
 
 void XM_CALLCONV Game::DrawGrid(FXMVECTOR xAxis, FXMVECTOR yAxis, FXMVECTOR origin, size_t xdivs, size_t ydivs, GXMVECTOR color)
 {
-	m_deviceResources->PIXBeginEvent(L"Draw grid");
+m_deviceResources->PIXBeginEvent(L"Draw grid");
 
-	auto context = m_deviceResources->GetD3DDeviceContext();
+auto context = m_deviceResources->GetD3DDeviceContext();
+context->OMSetBlendState(m_states->Opaque(), nullptr, 0xFFFFFFFF);
+context->OMSetDepthStencilState(m_states->DepthNone(), 0);
+context->RSSetState(m_states->CullCounterClockwise());
+
+m_batchEffect->Apply(context);
+
+context->IASetInputLayout(m_batchInputLayout.Get());
+
+m_batch->Begin();
+
+xdivs = std::max<size_t>(1, xdivs);
+ydivs = std::max<size_t>(1, ydivs);
+
+for (size_t i = 0; i <= xdivs; ++i)
+{
+	float fPercent = float(i) / float(xdivs);
+	fPercent = (fPercent * 2.0f) - 1.0f;
+	XMVECTOR vScale = XMVectorScale(xAxis, fPercent);
+	vScale = XMVectorAdd(vScale, origin);
+
+	VertexPositionColor v1(XMVectorSubtract(vScale, yAxis), color);
+	VertexPositionColor v2(XMVectorAdd(vScale, yAxis), color);
+	m_batch->DrawLine(v1, v2);
+}
+
+for (size_t i = 0; i <= ydivs; i++)
+{
+	float fPercent = float(i) / float(ydivs);
+	fPercent = (fPercent * 2.0f) - 1.0f;
+	XMVECTOR vScale = XMVectorScale(yAxis, fPercent);
+	vScale = XMVectorAdd(vScale, origin);
+
+	VertexPositionColor v1(XMVectorSubtract(vScale, xAxis), color);
+	VertexPositionColor v2(XMVectorAdd(vScale, xAxis), color);
+	m_batch->DrawLine(v1, v2);
+}
+
+m_batch->End();
+
+m_deviceResources->PIXEndEvent();
+}
+
+
+
+
+void Game::RenderRay(ID3D11DeviceContext* context) {
+	// Source: https://github.com/microsoft/DirectXTK/wiki/DebugDraw
+
+	// SETUP
+	m_states = std::make_unique<CommonStates>(m_deviceResources->GetD3DDevice());
+	m_batch = std::make_unique<PrimitiveBatch<VertexPositionColor>>(context);
+
+	m_batchEffect = std::make_unique<DirectX::BasicEffect>(m_deviceResources->GetD3DDevice());
+	m_batchEffect->SetVertexColorEnabled(true);
+	m_batchEffect->SetView(m_view);
+	m_batchEffect->SetProjection(m_projection);
+
+	{
+		void const* shaderByteCode;
+		size_t byteCodeLength;
+
+		m_batchEffect->GetVertexShaderBytecode(&shaderByteCode, &byteCodeLength);
+		DX::ThrowIfFailed(
+			m_deviceResources->GetD3DDevice()->CreateInputLayout(
+				VertexPositionColor::InputElements, VertexPositionColor::InputElementCount,
+				shaderByteCode, byteCodeLength,
+				m_batchInputLayout.ReleaseAndGetAddressOf()
+				)
+			);
+	}
+
 	context->OMSetBlendState(m_states->Opaque(), nullptr, 0xFFFFFFFF);
-	context->OMSetDepthStencilState(m_states->DepthNone(), 0);
-	context->RSSetState(m_states->CullCounterClockwise());
+	context->OMSetDepthStencilState(m_states->DepthDefault(), 0);
+	context->RSSetState(m_states->CullNone());
 
 	m_batchEffect->Apply(context);
-
 	context->IASetInputLayout(m_batchInputLayout.Get());
 
-	m_batch->Begin();
 
-	xdivs = std::max<size_t>(1, xdivs);
-	ydivs = std::max<size_t>(1, ydivs);
 
-	for (size_t i = 0; i <= xdivs; ++i)
-	{
-		float fPercent = float(i) / float(xdivs);
-		fPercent = (fPercent * 2.0f) - 1.0f;
-		XMVECTOR vScale = XMVectorScale(xAxis, fPercent);
-		vScale = XMVectorAdd(vScale, origin);
+	if (visualize_PickingRay) {
+		m_batch->Begin();
 
-		VertexPositionColor v1(XMVectorSubtract(vScale, yAxis), color);
-		VertexPositionColor v2(XMVectorAdd(vScale, yAxis), color);
-		m_batch->DrawLine(v1, v2);
+		// DRAW HERE
+		Vector3 start = PickingRay.position;
+		Vector3 direction = PickingRay.direction * -100;
+
+		DrawRay(
+			m_batch.get(),
+			XMVectorSet(start.x, start.y, start.z, 1.0f), XMVectorSet(direction.x, direction.y, direction.z, 1.0f),
+			false, DirectX::Colors::Red
+			);
+
+		m_batch->End();
 	}
-
-	for (size_t i = 0; i <= ydivs; i++)
-	{
-		float fPercent = float(i) / float(ydivs);
-		fPercent = (fPercent * 2.0f) - 1.0f;
-		XMVECTOR vScale = XMVectorScale(yAxis, fPercent);
-		vScale = XMVectorAdd(vScale, origin);
-
-		VertexPositionColor v1(XMVectorSubtract(vScale, xAxis), color);
-		VertexPositionColor v2(XMVectorAdd(vScale, xAxis), color);
-		m_batch->DrawLine(v1, v2);
-	}
-
-	m_batch->End();
-
-	m_deviceResources->PIXEndEvent();
 }
+
+
+
+
 #pragma endregion
 
+
 #pragma region Message Handlers
+
+
+
+
 // Message handlers
 void Game::OnActivated()
 {
@@ -560,9 +691,15 @@ void Game::NewAudioDevice()
 #endif
 
 
+
+
 #pragma endregion
 
 #pragma region Direct3D Resources
+
+
+
+
 // These are the resources that depend on the device.
 void Game::CreateDeviceDependentResources()
 {
@@ -620,7 +757,7 @@ void Game::CreateWindowSizeDependentResources()
 {
 	auto size = m_deviceResources->GetOutputSize();
 	float aspectRatio = float(size.right) / float(size.bottom);
-	float fovAngleY = fov * XM_PI / 180.0f;
+	float fovAngleY = _fov * XM_PI / 180.0f;
 
 	// This is a simple example of change that can be made when the app is in
 	// portrait or snapped view.
@@ -633,12 +770,11 @@ void Game::CreateWindowSizeDependentResources()
 	m_projection = Matrix::CreatePerspectiveFieldOfView(
 		fovAngleY,
 		aspectRatio,
-		0.01f,
-		1000.0f
+		_near,
+		_far
 	);
 
 	m_batchEffect->SetProjection(m_projection);
-
 }
 
 void Game::OnDeviceLost()
@@ -662,6 +798,10 @@ void Game::OnDeviceRestored()
 
 	CreateWindowSizeDependentResources();
 }
+
+
+
+
 #pragma endregion
 
 std::wstring StringToWCHART(std::string s)
