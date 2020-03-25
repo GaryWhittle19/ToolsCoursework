@@ -56,7 +56,7 @@ public:
 	// Picking specific
 	DirectX::XMVECTOR GetPickingVector(int window_x, int window_y);		// Picking vector requires window dimensions, visualize = true to show vector on-screen
 	int MousePicking();																	// Mouse picking will return ID of selected object
-	void MouseEditing();																// Mouse editing will edit the terrain if edit_toggle is true (m_toolInputCommands)
+	void UpdateSculptSettings();																// Mouse editing will edit the terrain if edit_toggle is true (m_toolInputCommands)
 	//
 	DirectX::SimpleMath::Ray PickingRay;
 
@@ -68,9 +68,6 @@ private:
 
 	// Update the editor
 	void Update(DX::StepTimer const& timer);
-
-	// Clamp x between min/max
-	float Clamp(float x, float min, float max);
 
 	// Render the picking ray
 	void RenderRay(ID3D11DeviceContext* context);
@@ -86,6 +83,11 @@ private:
 	// DirectX Client Size
 	int DX_client_xDim;
 	int DX_client_yDim;
+
+	// Terrain manipulation
+	int	target_brush_var = 0;					// For targeting brush variables... 0 is size, 1 is intensity (see below)
+	float brush_size = 25.0f;					// 0 
+	float brush_intensity = 1.0f;				// 1
 
 	// Object selection
 	int selectedID = -1;

@@ -5,6 +5,7 @@
 #include "pch.h"
 #include "Game.h"
 #include "DisplayObject.h"
+#include "Debug.h"
 #include "Toolbox.h"
 #include <string>
 #include <limits>
@@ -27,7 +28,7 @@ Game::Game()
 	m_grid = false;
 
 	// Functional
-	m_movespeed = 0.05;
+	m_movespeed = 0.30;
 
 	// Camera
 	m_camPosition.x = 0.0f;
@@ -175,8 +176,8 @@ void Game::Update(DX::StepTimer const& timer)
 
 	// Process input and update stuff
 	// Sprint
-	if (m_InputCommands.sprint) { m_movespeed = 0.30; }
-	else m_movespeed = 0.05;
+	if (m_InputCommands.sprint) { m_movespeed = 0.90; }
+	else m_movespeed = 0.30;
 	// Movement
 	if (m_InputCommands.forward){m_camPosition += m_camLookDirection * m_movespeed;}
 	if (m_InputCommands.back){m_camPosition -= m_camLookDirection * m_movespeed;}
@@ -259,7 +260,7 @@ DirectX::XMVECTOR Game::GetPickingVector(int window_x, int window_y)
 	PickingRay.position	= m_camPosition;
 	PickingRay.direction = PickingVector;
 
-	m_displayChunk.GenerateHeightmap(PickingRay, 25.0f);
+	m_displayChunk.GenerateHeightmap(PickingRay, brush_size, brush_intensity);
 
 	return PickingVector;
 }
@@ -316,9 +317,36 @@ int Game::MousePicking()
 	return selectedID;
 }
 
-void Game::MouseEditing()
+void Game::UpdateSculptSettings()
 {
+	switch (m_InputCommands.brush_control_int) {
+	case 0:
+		if (m_InputCommands.decrease)
+		{
+			brush_size -= 0.333f;
+		}
+		if (m_InputCommands.increase)
+		{
+			brush_size += 0.333f;
+		}
+		brush_size = Toolbox::Clamp(brush_size, 1.0f, 200.0f);
+		//Debug::Out(std::to_string(brush_size) + "\n", "Brush size: ");
+		break;
 
+	case 1:
+		if (m_InputCommands.decrease)
+		{
+			brush_intensity -= 0.025f;
+		}
+		if (m_InputCommands.increase)
+		{
+			brush_intensity += 0.025f;
+		}
+		brush_intensity = Toolbox::Clamp(brush_intensity, -2.0f, 2.0f);
+		//Debug::Out(std::to_string(brush_intensity) + "\n", "Brush intensity: ");
+		break;
+
+	}
 }
 
 #pragma endregion
@@ -517,14 +545,15 @@ void Game::RenderRay(ID3D11DeviceContext* context) {
 		);
 
 	std::vector<DirectX::SimpleMath::Vector3> points;
-	m_displayChunk.GetSelectedQuad(points);
+	m_displayChunk.GetSelectedVertices(points);
 
-	DrawQuad(
-		m_batch.get(),
-		XMVectorSet(points[0].x, points[0].y, points[0].z, 1.0f), XMVectorSet(points[1].x, points[1].y, points[1].z, 1.0f),
-		XMVectorSet(points[2].x, points[2].y, points[2].z, 1.0f), XMVectorSet(points[3].x, points[3].y, points[3].z, 1.0f),
-		DirectX::Colors::Red
-		);
+	for (int i = 0; i < points.size(); i++) {
+		DrawRay(
+			m_batch.get(),
+			XMVectorSet(points[i].x, points[i].y, points[i].z, 1.0f), XMVectorSet(0.0f, brush_intensity, 0.0f, 1.0f),
+			true, DirectX::Colors::Red
+			);
+	}
 
 	m_batch->End();
 }

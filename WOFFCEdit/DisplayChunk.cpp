@@ -10,11 +10,11 @@ using namespace DirectX::SimpleMath;
 
 DisplayChunk::DisplayChunk()
 {
-	//terrain size in meters. note that this is hard coded here, we COULD get it from the terrain chunk along with the other info from the tool if we want to be more flexible.
+	// Terrain size in meters. note that this is hard coded here, we COULD get it from the terrain chunk along with the other info from the tool if we want to be more flexible.
 	m_terrainSize = 512;
-	m_terrainHeightScale = 0.25;  //convert our 0-256 terrain to 64
-	m_textureCoordStep = 1.0 / (TERRAINRESOLUTION-1);	//-1 becuase its split into chunks. not vertices.  we want tthe last one in each row to have tex coord 1
-	m_terrainPositionScalingFactor = m_terrainSize / (TERRAINRESOLUTION-1);
+	m_terrainHeightScale = 0.25;						// Convert our 0-256 terrain to 64
+	m_textureCoordStep = 1.0 / (TERRAINRESOLUTION - 1);	// -1 becuase its split into chunks. not vertices.  we want tthe last one in each row to have tex coord 1
+	m_terrainPositionScalingFactor = m_terrainSize / (TERRAINRESOLUTION - 1);
 }
 
 
@@ -22,7 +22,7 @@ DisplayChunk::~DisplayChunk()
 {
 }
 
-void DisplayChunk::PopulateChunkData(ChunkObject * SceneChunk)
+void DisplayChunk::PopulateChunkData(ChunkObject* SceneChunk)
 {
 	m_name = SceneChunk->name;
 	m_chunk_x_size_metres = SceneChunk->chunk_x_size_metres;
@@ -52,11 +52,11 @@ void DisplayChunk::RenderBatch(std::shared_ptr<DX::DeviceResources>  DevResource
 	context->IASetInputLayout(m_terrainInputLayout.Get());
 
 	m_batch->Begin();
-	for (size_t i = 0; i < TERRAINRESOLUTION-1; i++)	//looping through QUADS.  so we subtrack one from the terrain array or it will try to draw a quad starting with the last vertex in each row. Which wont work
+	for (size_t i = 0; i < TERRAINRESOLUTION - 1; i++)		// Looping through QUADS.  so we subtrack one from the terrain array or it will try to draw a quad starting with the last vertex in each row. Which wont work
 	{
-		for (size_t j = 0; j < TERRAINRESOLUTION-1; j++)//same as above
+		for (size_t j = 0; j < TERRAINRESOLUTION - 1; j++)	// Same as above
 		{
-			m_batch->DrawQuad(m_terrainGeometry[i][j], m_terrainGeometry[i][j+1], m_terrainGeometry[i+1][j+1], m_terrainGeometry[i+1][j]); //bottom left bottom right, top right top left.
+			m_batch->DrawQuad(m_terrainGeometry[i][j], m_terrainGeometry[i][j + 1], m_terrainGeometry[i + 1][j + 1], m_terrainGeometry[i + 1][j]); // Bottom left bottom right, top right top left.
 		}
 	}
 	m_batch->End();
@@ -64,8 +64,8 @@ void DisplayChunk::RenderBatch(std::shared_ptr<DX::DeviceResources>  DevResource
 
 void DisplayChunk::InitialiseBatch()
 {
-	//build geometry for our terrain array
-	//iterate through all the vertices of our required resolution terrain.
+	// Build geometry for our terrain array
+	// Iterate through all the vertices of our required resolution terrain.
 	int index = 0;
 
 	for (size_t i = 0; i < TERRAINRESOLUTION; i++)
@@ -73,14 +73,15 @@ void DisplayChunk::InitialiseBatch()
 		for (size_t j = 0; j < TERRAINRESOLUTION; j++)
 		{
 			index = (TERRAINRESOLUTION * i) + j;
-			m_terrainGeometry[i][j].position =			Vector3(j*m_terrainPositionScalingFactor-(0.5*m_terrainSize), (float)(m_heightMap[index])*m_terrainHeightScale, i*m_terrainPositionScalingFactor-(0.5*m_terrainSize));	//This will create a terrain going from -64->64.  rather than 0->128.  So the center of the terrain is on the origin
-			m_terrainGeometry[i][j].normal =			Vector3(0.0f, 1.0f, 0.0f);						//standard y =up
-			m_terrainGeometry[i][j].textureCoordinate =	Vector2(((float)m_textureCoordStep*j)*m_tex_diffuse_tiling, ((float)m_textureCoordStep*i)*m_tex_diffuse_tiling);				//Spread tex coords so that its distributed evenly across the terrain from 0-1
-			
+			m_terrainGeometry[i][j].position = Vector3(j * m_terrainPositionScalingFactor - (0.5 * m_terrainSize), (float)(m_heightMap[index]) * m_terrainHeightScale, i * m_terrainPositionScalingFactor - (0.5 * m_terrainSize));	//This will create a terrain going from -64->64.  rather than 0->128.  So the center of the terrain is on the origin
+			m_terrainGeometry[i][j].normal = Vector3(0.0f, 1.0f, 0.0f);						//standard y =up
+			m_terrainGeometry[i][j].textureCoordinate = Vector2(((float)m_textureCoordStep * j) * m_tex_diffuse_tiling, ((float)m_textureCoordStep * i) * m_tex_diffuse_tiling);				//Spread tex coords so that its distributed evenly across the terrain from 0-1
+
 		}
 	}
 	CalculateTerrainNormals();
 }
+
 
 void DisplayChunk::LoadHeightMap(std::shared_ptr<DX::DeviceResources>  DevResources)
 {
@@ -88,7 +89,7 @@ void DisplayChunk::LoadHeightMap(std::shared_ptr<DX::DeviceResources>  DevResour
 	auto devicecontext = DevResources->GetD3DDeviceContext();
 
 	//load in heightmap .raw
-	FILE *pFile = NULL;
+	FILE* pFile = NULL;
 
 	// Open The File In Read / Binary Mode.
 
@@ -103,17 +104,17 @@ void DisplayChunk::LoadHeightMap(std::shared_ptr<DX::DeviceResources>  DevResour
 
 	// Here We Load The .RAW File Into Our pHeightMap Data Array
 	// We Are Only Reading In '1', And The Size Is (Width * Height)
-	fread(m_heightMap, 1, TERRAINRESOLUTION*TERRAINRESOLUTION, pFile);
+	fread(m_heightMap, 1, TERRAINRESOLUTION * TERRAINRESOLUTION, pFile);
 
 	fclose(pFile);
 
 	//load in texture diffuse
-	
+
 	//load the diffuse texture
 	std::wstring texturewstr = StringToWCHART(m_tex_diffuse_path);
-	HRESULT rs;	
+	HRESULT rs;
 	rs = CreateDDSTextureFromFile(device, texturewstr.c_str(), NULL, &m_texture_diffuse);	//load tex into Shader resource	view and resource
-	
+
 	//setup terrain effect
 	m_terrainEffect = std::make_unique<BasicEffect>(device);
 	m_terrainEffect->EnableDefaultLighting();
@@ -136,18 +137,12 @@ void DisplayChunk::LoadHeightMap(std::shared_ptr<DX::DeviceResources>  DevResour
 		);
 
 	m_batch = std::make_unique<PrimitiveBatch<VertexPositionNormalTexture>>(devicecontext);
-
-	
 }
+
 
 void DisplayChunk::SaveHeightMap()
 {
-/*	for (size_t i = 0; i < TERRAINRESOLUTION*TERRAINRESOLUTION; i++)
-	{
-		m_heightMap[i] = 0;
-	}*/
-
-	FILE *pFile = NULL;
+	FILE* pFile = NULL;
 
 	// Open The File In Read / Binary Mode.
 	pFile = fopen(m_heightmap_path.c_str(), "wb+");;
@@ -159,10 +154,10 @@ void DisplayChunk::SaveHeightMap()
 		return;
 	}
 
-	fwrite(m_heightMap, 1, TERRAINRESOLUTION*TERRAINRESOLUTION, pFile);
+	fwrite(m_heightMap, 1, TERRAINRESOLUTION * TERRAINRESOLUTION, pFile);
 	fclose(pFile);
-	
 }
+
 
 void DisplayChunk::UpdateTerrain()
 {
@@ -173,58 +168,64 @@ void DisplayChunk::UpdateTerrain()
 		for (size_t j = 0; j < TERRAINRESOLUTION; j++)
 		{
 			index = (TERRAINRESOLUTION * i) + j;
-			m_terrainGeometry[i][j].position.y = (float)(m_heightMap[index])*m_terrainHeightScale;	
+			m_terrainGeometry[i][j].position.y = (float)(m_heightMap[index]) * m_terrainHeightScale;
 		}
 	}
 	CalculateTerrainNormals();
 }
 
-//void DisplayChunk::GaussianCircle(int size, float range, float mean)
-//{
-//
-//}
 
-void DisplayChunk::GenerateHeightmap(DirectX::SimpleMath::Ray PickingVector, float radius)
+void DisplayChunk::GenerateHeightmap(DirectX::SimpleMath::Ray PickingVector, float radius, float intensity)
 {
+	// Clear the selected vertices vector.
+	selected_vertices.clear();
+
 	DirectX::SimpleMath::Vector3 v1, v2, v3, v4;			// Position vector veriables 
 	float distance = 10000.0f;								// Distance 
 
-	for (size_t i = 0; i < TERRAINRESOLUTION - 1; i++) {	//	looping through QUADS.  so we subtract one from the terrain array or it will try to draw a quad starting with the last vertex in each row. Which wont work
+	for (size_t i = 0; i < TERRAINRESOLUTION - 1; i++) {
 		for (int j = 0; j < TERRAINRESOLUTION - 1; j++)
 		{
+			// Initialize the quad vertices to prepare for intersection test.
 			v1 = m_terrainGeometry[i][j].position;
 			v2 = m_terrainGeometry[i][j + 1].position;
 			v3 = m_terrainGeometry[i + 1][j + 1].position;
 			v4 = m_terrainGeometry[i + 1][j].position;
- 
+
+			// Perform intersection test. 
 			if (PickingVector.Intersects(v1, v2, v3, distance) || PickingVector.Intersects(v1, v4, v3, distance)) {
-				if (m_terrainGeometry[i][j].position.y < PickingVector.position.y && m_terrainGeometry[i][j].position.y > PickingVector.direction.y*distance) {
-					// Perform the edit
-					m_terrainGeometry[i][j].position.y += 0.2f;
-					m_terrainGeometry[i][j + 1].position.y += 0.2f;
-					m_terrainGeometry[i + 1][j + 1].position.y += 0.2f;
-					m_terrainGeometry[i + 1][j].position.y += 0.2f;
-					
-					// Update selected quad
-					selected_quad[0] = m_terrainGeometry[i][j].position;
+				if (m_terrainGeometry[i][j].position.y < PickingVector.position.y && m_terrainGeometry[i][j].position.y > PickingVector.direction.y * distance) {
+					// Perform the edit if the intersection returns true. 
+					m_terrainGeometry[i][j].position.y += intensity;
+					m_terrainGeometry[i][j + 1].position.y += intensity;
+					m_terrainGeometry[i + 1][j + 1].position.y += intensity;
+					m_terrainGeometry[i + 1][j].position.y += intensity;
+
+					// Update selected quad.
+					/*selected_quad[0] = m_terrainGeometry[i][j].position;
 					selected_quad[1] = m_terrainGeometry[i][j + 1].position;
 					selected_quad[2] = m_terrainGeometry[i + 1][j + 1].position;
-					selected_quad[3] = m_terrainGeometry[i + 1][j].position;
+					selected_quad[3] = m_terrainGeometry[i + 1][j].position;*/
 
-					for (size_t x = 0; x < TERRAINRESOLUTION - 1; x++) 
-					{	//	looping through QUADS.  so we subtract one from the terrain array or it will try to draw a quad starting with the last vertex in each row. Which wont work
+					for (size_t x = 0; x < TERRAINRESOLUTION - 1; x++)
+					{	// Loop through quads again to do a distance check on the selected quad (or rather, vertex). If within radius, expand based on mapped ranged value.
+							// Problems:
+								// Based on one vertice, so it's a little inaccurate considering the point of origin is technically off a little. 
+								// Very expensive computationally. 
 						for (int y = 0; y < TERRAINRESOLUTION - 1; y++)
 						{
 							float proximity = DirectX::SimpleMath::Vector3::Distance(m_terrainGeometry[x][y].position, m_terrainGeometry[i][j].position);
 							if (proximity < radius)
 							{
 								float mult = Toolbox::MappedClamp(proximity, 0.0f, radius, 1.0f, 0.0f);
-								
+
 								// Perform the edit
-								m_terrainGeometry[x][y].position.y += 0.2f * mult;
-								m_terrainGeometry[x][y + 1].position.y += 0.2f * mult;
-								m_terrainGeometry[x + 1][y + 1].position.y += 0.2f * mult;
-								m_terrainGeometry[x + 1][y].position.y += 0.2f * mult;
+								m_terrainGeometry[x][y].position.y += intensity * mult;
+								// Fill selected vertices array. 
+								selected_vertices.push_back(m_terrainGeometry[x][y].position);
+								/*m_terrainGeometry[x][y + 1].position.y += intensity * mult;
+								m_terrainGeometry[x + 1][y + 1].position.y += intensity * mult;
+								m_terrainGeometry[x + 1][y].position.y += intensity * mult;*/
 							}
 						}
 					}
@@ -234,12 +235,14 @@ void DisplayChunk::GenerateHeightmap(DirectX::SimpleMath::Ray PickingVector, flo
 	}
 }
 
-void DisplayChunk::GetSelectedQuad(std::vector<DirectX::SimpleMath::Vector3>& points)
+// This function will simply populate a referenced vector with the selected quad's vertices, for purposes such as quad visualization. 
+void DisplayChunk::GetSelectedVertices(std::vector<DirectX::SimpleMath::Vector3>& points)
 {
-	for (int i = 0; i < 4; i++) 
+	points = selected_vertices;
+	/*for (int i = 0; i < 4; i++)
 	{
 		points.emplace_back(selected_quad[i]);
-	}
+	}*/
 }
 
 void DisplayChunk::CalculateTerrainNormals()
@@ -247,9 +250,9 @@ void DisplayChunk::CalculateTerrainNormals()
 	int index1, index2, index3, index4;
 	DirectX::SimpleMath::Vector3 upDownVector, leftRightVector, normalVector;
 
-	for (int i = 0; i<(TERRAINRESOLUTION - 1); i++)
+	for (int i = 0; i < (TERRAINRESOLUTION - 1); i++)
 	{
-		for (int j = 0; j<(TERRAINRESOLUTION - 1); j++)
+		for (int j = 0; j < (TERRAINRESOLUTION - 1); j++)
 		{
 			upDownVector.x = (m_terrainGeometry[i + 1][j].position.x - m_terrainGeometry[i - 1][j].position.x);
 			upDownVector.y = (m_terrainGeometry[i + 1][j].position.y - m_terrainGeometry[i - 1][j].position.y);

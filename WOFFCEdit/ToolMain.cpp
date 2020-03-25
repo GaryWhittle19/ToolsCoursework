@@ -3,6 +3,7 @@
 #include <vector>
 #include <sstream>
 #include "Debug.h"
+#include "Toolbox.h"
 
 //
 //ToolMain Class
@@ -14,20 +15,27 @@ ToolMain::ToolMain()
 	m_databaseConnection = NULL;
 
 	// Zero the input commands
-	m_toolInputCommands.forward		= false;
-	m_toolInputCommands.back		= false;
-	m_toolInputCommands.left		= false;
-	m_toolInputCommands.right		= false;
-	m_toolInputCommands.up			= false;
-	m_toolInputCommands.down		= false;
-	m_toolInputCommands.mouseLeft	= false;
-	m_toolInputCommands.mouseRight  = false;
-	m_toolInputCommands.sprint		= false;
+	m_toolInputCommands.forward				= false;
+	m_toolInputCommands.back				= false;
+	m_toolInputCommands.left				= false;
+	m_toolInputCommands.right				= false;
+	m_toolInputCommands.up					= false;
+	m_toolInputCommands.down				= false;
+	//
+	m_toolInputCommands.mouseLeft			= false;
+	m_toolInputCommands.mouseRight			= false;
+	//
+	m_toolInputCommands.sprint				= false;
 	m_toolInputCommands.wireframe_toggle	= false;
-	m_toolInputCommands.edit_toggle = false;
-	m_toolInputCommands.x			= 0;
-	m_toolInputCommands.y			= 0;
-	
+	m_toolInputCommands.ray_toggle			= false;
+	//
+	m_toolInputCommands.edit_toggle			= false;
+	m_toolInputCommands.brush_control_int	= 0;
+	m_toolInputCommands.decrease			= false;
+	m_toolInputCommands.increase			= false;
+	//
+	m_toolInputCommands.x					= 0;
+	m_toolInputCommands.y					= 0;
 }
 
 ToolMain::~ToolMain()
@@ -296,16 +304,21 @@ void ToolMain::Tick(MSG *msg)
 
 	//Renderer Update Call
 	m_d3dRenderer.Tick(&m_toolInputCommands);
+	m_d3dRenderer.UpdateSculptSettings(); 
+
 	if (m_toolInputCommands.mouseLeft) {
 		// TODO: Create and return the picking vector to be used for terrain manipulation or object manipulation
-		m_pickingVector = m_d3dRenderer.GetPickingVector(m_width, m_height);
-		// Terrain
+
+		//m_pickingVector = m_d3dRenderer.GetPickingVector(m_width, m_height);
+
 		if (m_toolInputCommands.edit_toggle) 
 		{
-			m_d3dRenderer.MouseEditing();
+			// m_d3dRenderer.MouseSculpting();
+			m_pickingVector = m_d3dRenderer.GetPickingVector(m_width, m_height);
 		}
+
 		else {
-			m_selectedObject = m_d3dRenderer.MousePicking();
+			// m_selectedObject = m_d3dRenderer.MousePicking();
 			m_toolInputCommands.mouseLeft = false;
 		}
 	}
@@ -383,5 +396,25 @@ void ToolMain::UpdateInput(MSG * msg)
 	{
 		m_toolInputCommands.ray_toggle = !m_toolInputCommands.ray_toggle;
 		Debug::Out("Ray!");
+	}
+	// Increase and decrease target control variable
+	if (GetKeyState(VK_LEFT) & 0x8000)
+	{
+		m_toolInputCommands.decrease = true;
+		
+	}
+	else m_toolInputCommands.decrease = false;
+	if (GetKeyState(VK_RIGHT) & 0x8000)
+	{
+		m_toolInputCommands.increase = true;
+	}
+	else m_toolInputCommands.increase = false;
+	// Change target brush variable being controlled
+	if (m_toolInputProcessor.WasKeyReleased('C'))
+	{
+		m_toolInputCommands.brush_control_int += 1;			// Add one which will result in target variable being changes
+		if (m_toolInputCommands.brush_control_int > 1) {	// Ensure that the cycle_mode int won't go rogue
+			m_toolInputCommands.brush_control_int = 0;
+		}
 	}
 }

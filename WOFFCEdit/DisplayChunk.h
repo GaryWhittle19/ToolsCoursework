@@ -19,9 +19,9 @@ public:
 	void LoadHeightMap(std::shared_ptr<DX::DeviceResources>  DevResources);
 	void SaveHeightMap();			//saves the heigtmap back to file.
 	void UpdateTerrain();			//updates the geometry based on the heigtmap
-	void GenerateHeightmap(DirectX::SimpleMath::Ray PickingVector, float radius); // creates or alters the heightmap
+	void GenerateHeightmap(DirectX::SimpleMath::Ray PickingVector, float radius, float intensity); // creates or alters the heightmap
 
-	void GetSelectedQuad(std::vector<DirectX::SimpleMath::Vector3>& points); // Return selected quad
+	void GetSelectedVertices(std::vector<DirectX::SimpleMath::Vector3>& points); // Return selected quad
 
 	std::unique_ptr<DirectX::PrimitiveBatch<DirectX::VertexPositionNormalTexture>>  m_batch;
 	std::unique_ptr<DirectX::BasicEffect>       m_terrainEffect;
@@ -32,7 +32,8 @@ public:
 private:
 	
 	// Terrain editing
-	DirectX::SimpleMath::Vector3 selected_quad[4]; // Array of xz points for selected quad
+	std::vector<DirectX::SimpleMath::Vector3> selected_vertices;
+	//DirectX::SimpleMath::Vector3 selected_quad[4]; // Array of xz points for selected quad
 
 
 
