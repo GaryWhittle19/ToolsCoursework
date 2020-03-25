@@ -1,8 +1,9 @@
 #include <string>
+
 #include "DisplayChunk.h"
 #include "Game.h"
 #include "Debug.h"
-
+#include "Toolbox.h"
 
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
@@ -79,7 +80,6 @@ void DisplayChunk::InitialiseBatch()
 		}
 	}
 	CalculateTerrainNormals();
-	
 }
 
 void DisplayChunk::LoadHeightMap(std::shared_ptr<DX::DeviceResources>  DevResources)
@@ -184,9 +184,62 @@ void DisplayChunk::UpdateTerrain()
 //
 //}
 
-void DisplayChunk::GenerateHeightmap(DirectX::XMVECTOR PickingVector)
+void DisplayChunk::GenerateHeightmap(DirectX::SimpleMath::Ray PickingVector, float radius)
 {
-	//insert how YOU want to update the heigtmap here! :D
+	DirectX::SimpleMath::Vector3 v1, v2, v3, v4;			// Position vector veriables 
+	float distance = 10000.0f;								// Distance 
+
+	for (size_t i = 0; i < TERRAINRESOLUTION - 1; i++) {	//	looping through QUADS.  so we subtract one from the terrain array or it will try to draw a quad starting with the last vertex in each row. Which wont work
+		for (int j = 0; j < TERRAINRESOLUTION - 1; j++)
+		{
+			v1 = m_terrainGeometry[i][j].position;
+			v2 = m_terrainGeometry[i][j + 1].position;
+			v3 = m_terrainGeometry[i + 1][j + 1].position;
+			v4 = m_terrainGeometry[i + 1][j].position;
+ 
+			if (PickingVector.Intersects(v1, v2, v3, distance) || PickingVector.Intersects(v1, v4, v3, distance)) {
+				if (m_terrainGeometry[i][j].position.y < PickingVector.position.y && m_terrainGeometry[i][j].position.y > PickingVector.direction.y*distance) {
+					// Perform the edit
+					m_terrainGeometry[i][j].position.y += 0.2f;
+					m_terrainGeometry[i][j + 1].position.y += 0.2f;
+					m_terrainGeometry[i + 1][j + 1].position.y += 0.2f;
+					m_terrainGeometry[i + 1][j].position.y += 0.2f;
+					
+					// Update selected quad
+					selected_quad[0] = m_terrainGeometry[i][j].position;
+					selected_quad[1] = m_terrainGeometry[i][j + 1].position;
+					selected_quad[2] = m_terrainGeometry[i + 1][j + 1].position;
+					selected_quad[3] = m_terrainGeometry[i + 1][j].position;
+
+					for (size_t x = 0; x < TERRAINRESOLUTION - 1; x++) 
+					{	//	looping through QUADS.  so we subtract one from the terrain array or it will try to draw a quad starting with the last vertex in each row. Which wont work
+						for (int y = 0; y < TERRAINRESOLUTION - 1; y++)
+						{
+							float proximity = DirectX::SimpleMath::Vector3::Distance(m_terrainGeometry[x][y].position, m_terrainGeometry[i][j].position);
+							if (proximity < radius)
+							{
+								float mult = Toolbox::MappedClamp(proximity, 0.0f, radius, 1.0f, 0.0f);
+								
+								// Perform the edit
+								m_terrainGeometry[x][y].position.y += 0.2f * mult;
+								m_terrainGeometry[x][y + 1].position.y += 0.2f * mult;
+								m_terrainGeometry[x + 1][y + 1].position.y += 0.2f * mult;
+								m_terrainGeometry[x + 1][y].position.y += 0.2f * mult;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+void DisplayChunk::GetSelectedQuad(std::vector<DirectX::SimpleMath::Vector3>& points)
+{
+	for (int i = 0; i < 4; i++) 
+	{
+		points.emplace_back(selected_quad[i]);
+	}
 }
 
 void DisplayChunk::CalculateTerrainNormals()
@@ -214,76 +267,3 @@ void DisplayChunk::CalculateTerrainNormals()
 		}
 	}
 }
-
-/*
-DirectX::SimpleMath::Ray DisplayChunk::EditTerrain(float mX, float mY, float w, float h, float _fov, float _near, float _far, DirectX::SimpleMath::Matrix m_view, Vector3 campos)
-{
-	_fov = _fov / 180 * 100;
-	// [ - - - - - - - - - - ]
-		// Convert screen coordinates, in pixels, to normalized coordinates,
-		// with an origin at the center of the viewport and values on each axis
-		// ranging from -1.0 to 1.0.
-
-	float aspect = w / h;								// Aspect ratio
-	float dx = (mX / (w/2) - 1.0f) / aspect;			// Normalize screen coordinates...
-	float dy = 1.0f - mY / (h/2);
-	//Debug::Out(std::to_string(dx), "Normalized x: ");	// Debug out
-	//Debug::Out(std::to_string(dy), "Normalized y: ");
-
-
-	// [ - - - - - - - - - - ]
-		// Scale the normalized screen coordinates to the field of view.
-		// The X and Y values attained will define the slope of the ray
-		// away from the center of the frustum in relation to depth.
-
-	float tangent;										// Calculate tangent
-	tangent = tanf(_fov * 0.5f);
-	dx = tangent * dx;
-	dy = tangent * dy;
-	//Debug::Out(std::to_string(dx), "Corrected x: ");	// Debug out
-	//Debug::Out(std::to_string(dy), "Corrected y: ");
-
-
-	// [ - - - - - - - - - - ]
-		// Calculate two points on the line that correspond to the near and far
-		// clipping planes.  These will be expressed in 3D coordinates in view space.
-
-	Vector3 p1 = Vector3(dx * _near, dy * _near, _near);
-	Vector3 p2 = Vector3(dx * _far, dy * _far, _far);
-
-
-	// [ - - - - - - - - - - ]
-		// Create a matrix that expresses an inverse of the current view transformation.
-
-	DirectX::SimpleMath::Matrix invert_view = m_view.Invert();
-
-
-	// [ - - - - - - - - - - ]
-		// Multiply these coordinates with the inverse matrix to transform them into world space.
-
-	p1 = XMVector3Transform(p1, invert_view);
-	p2 = XMVector3Transform(p2, invert_view);
-
-
-	// [ - - - - - - - - - - ]
-		// Create the DirectX Ray.
-
-	DirectX::SimpleMath::Ray raycast;
-	Vector3 result = p2 - p1;
-	result.Normalize();
-	raycast.direction = result;
-	raycast.position = campos;
-
-
-
-	Debug::Out("x: " + std::to_string(raycast.direction.x) + " y: " + std::to_string(raycast.direction.y) + " z: " + std::to_string(raycast.direction.z), "direction: ");
-	Debug::Out("x: " + std::to_string(raycast.position.x) + " y: " + std::to_string(raycast.position.y) + " z: " + std::to_string(raycast.position.z), "position: ");
-
-
-	// i, j of terrain
-	//int i, j;
-	//Debug::Out(std::to_string(m_terrainGeometry[i][j].position.y), "Y: ");
-
-	return raycast;
-}
-*/

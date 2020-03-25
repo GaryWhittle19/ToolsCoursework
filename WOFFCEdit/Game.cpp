@@ -5,6 +5,7 @@
 #include "pch.h"
 #include "Game.h"
 #include "DisplayObject.h"
+#include "Toolbox.h"
 #include <string>
 #include <limits>
 
@@ -106,10 +107,12 @@ void Game::SetGridState(bool state)
 	m_grid = state;
 }
 
+
+
+
+
+
 #pragma region Frame Update
-
-
-
 
 // Executes the basic game loop.
 void Game::Tick(InputCommands* Input)
@@ -134,6 +137,7 @@ void Game::Tick(InputCommands* Input)
 	Render();
 }
 
+
 // Updates the world.
 void Game::Update(DX::StepTimer const& timer)
 {
@@ -156,7 +160,7 @@ void Game::Update(DX::StepTimer const& timer)
 	}
 
 	// Clamp camera pitch within reasonable values
-	m_camOrientation.x = Clamp(m_camOrientation.x, -85.0f, 85.0f);
+	m_camOrientation.x = Toolbox::Clamp(m_camOrientation.x, -85.0f, 85.0f);
 
 	// Create look direction from Euler angles in m_camOrientation
 	float phi = (m_camOrientation.x) * 3.1415 / 180;
@@ -170,14 +174,20 @@ void Game::Update(DX::StepTimer const& timer)
 	m_camLookDirection.Cross(Vector3::UnitY, m_camRight);
 
 	// Process input and update stuff
-	if (m_InputCommands.lShift) { m_movespeed = 0.30; }
+	// Sprint
+	if (m_InputCommands.sprint) { m_movespeed = 0.30; }
 	else m_movespeed = 0.05;
+	// Movement
 	if (m_InputCommands.forward){m_camPosition += m_camLookDirection * m_movespeed;}
 	if (m_InputCommands.back){m_camPosition -= m_camLookDirection * m_movespeed;}
 	if (m_InputCommands.right){m_camPosition += m_camRight * m_movespeed;}
 	if (m_InputCommands.left){m_camPosition -= m_camRight * m_movespeed;}
 	if (m_InputCommands.up){m_camPosition.y += m_movespeed; }
 	if (m_InputCommands.down){m_camPosition.y -= m_movespeed; }
+	// Wireframe
+	bWireframe = m_InputCommands.wireframe_toggle;
+	// Picking ray visualization
+	bVisualizeRay = m_InputCommands.ray_toggle;
 	
 	// Update lookat point
 	m_camLookAt = m_camPosition + m_camLookDirection;
@@ -217,21 +227,13 @@ void Game::Update(DX::StepTimer const& timer)
 #endif
 }
 
-float Game::Clamp(float x, float min, float max) {
-	if (x < min)
-		x = min;
-	else if (x > max)
-		x = max;
-	else
-		x = x;
 
-	return x;
-}
-
-DirectX::XMVECTOR Game::GetPickingVector(int window_x, int window_y, bool visualize)
+DirectX::XMVECTOR Game::GetPickingVector(int window_x, int window_y)
 {
+	DX_client_xDim = window_x;
+	DX_client_yDim = window_y;
+
 	DirectX::XMVECTOR PickingVector;
-	float minimumDistance = std::numeric_limits<float>::max();
 
 	// Set up near and far planes of frustum with mouse X and mouse Y passed down from Toolmain. 
 	// They may look the same but note, the difference in Z
@@ -246,36 +248,24 @@ DirectX::XMVECTOR Game::GetPickingVector(int window_x, int window_y, bool visual
 	XMMATRIX local = m_world * XMMatrixTransformation(g_XMZero, Quaternion::Identity, defaultSca, g_XMZero, defaultRot, defaultTra);
 
 	// Unproject the points on the near and far plane, with respect to the matrix we just created.
-	XMVECTOR nearPoint = XMVector3Unproject(nearSource, 0.0f, 0.0f, window_x, window_y, m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_projection, m_view, local);
-	XMVECTOR farPoint = XMVector3Unproject(farSource, 0.0f, 0.0f, window_x, window_y, m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_projection, m_view, local);
+	XMVECTOR nearPoint = XMVector3Unproject(nearSource, 0.0f, 0.0f, DX_client_xDim, DX_client_yDim, m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_projection, m_view, local);
+	XMVECTOR farPoint = XMVector3Unproject(farSource, 0.0f, 0.0f, DX_client_xDim, DX_client_yDim, m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_projection, m_view, local);
 
 	// Turn the transformed points into our picking vector. 
 	PickingVector = farPoint - nearPoint;
 	PickingVector = XMVector3Normalize(PickingVector);
 
-	XMFLOAT3 ClosestTerrainPosition = XMFLOAT3(minimumDistance, minimumDistance, minimumDistance);
+	// Set PickingRay position and direction correctly to be used in object selection/terrain manipulation
+	PickingRay.position	= m_camPosition;
+	PickingRay.direction = PickingVector;
 
-	for (size_t i = 0; i < TERRAINRESOLUTION - 1; i++) {	//	looping through QUADS.  so we subtract one from the terrain array or it will try to draw a quad starting with the last vertex in each row. Which wont work
-		for (int j = 0; j < TERRAINRESOLUTION; j++)
-		{
-			
-
-			
-			
-		}
-	}
-
-	if (visualize) {
-		visualize_PickingRay = true;
-		PickingRay.position = m_camPosition;
-		PickingRay.direction = -PickingVector;
-	}
+	m_displayChunk.GenerateHeightmap(PickingRay, 25.0f);
 
 	return PickingVector;
 }
 
 
-int Game::MousePicking(int window_x, int window_y, bool visualize)
+int Game::MousePicking()
 {
 	DirectX::XMVECTOR PickingVector;
 	float pickedDistance;
@@ -302,8 +292,8 @@ int Game::MousePicking(int window_x, int window_y, bool visualize)
 		XMMATRIX local = m_world * XMMatrixTransformation(g_XMZero, Quaternion::Identity, scale, g_XMZero, rotate, translate);
 
 		// Unproject the points on the near and far plane, with respect to the matrix we just created.
-		XMVECTOR nearPoint = XMVector3Unproject(nearSource, 0.0f, 0.0f, window_x, window_y, m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_projection, m_view, local);
-		XMVECTOR farPoint = XMVector3Unproject(farSource, 0.0f, 0.0f, window_x, window_y, m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_projection, m_view, local);
+		XMVECTOR nearPoint = XMVector3Unproject(nearSource, 0.0f, 0.0f, DX_client_xDim, DX_client_yDim, m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_projection, m_view, local);
+		XMVECTOR farPoint = XMVector3Unproject(farSource, 0.0f, 0.0f, DX_client_xDim, DX_client_yDim, m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_projection, m_view, local);
 
 		// Turn the transformed points into our picking vector. 
 		PickingVector = farPoint - nearPoint;
@@ -323,24 +313,22 @@ int Game::MousePicking(int window_x, int window_y, bool visualize)
 		}
 	}
 
-	if (visualize) {
-		visualize_PickingRay = true;
-		PickingRay.position = m_camPosition;
-		PickingRay.direction = -PickingVector;
-	}
-
 	return selectedID;
 }
 
+void Game::MouseEditing()
+{
 
-
+}
 
 #pragma endregion
 
+
+
+
+
+
 #pragma region Frame Render
-
-
-
 
 // Draws the scene.
 void Game::Render()
@@ -398,18 +386,19 @@ void Game::Render()
 	context->OMSetBlendState(m_states->Opaque(), nullptr, 0xFFFFFFFF);
 	context->OMSetDepthStencilState(m_states->DepthDefault(), 0);
 	context->RSSetState(m_states->CullNone());
-	//	context->RSSetState(m_states->Wireframe());		//uncomment for wireframe
+	if (bWireframe) { context->RSSetState(m_states->Wireframe()); };
 
 	// Render the batch,  This is handled in the Display chunk becuase it has the potential to get complex
 	m_displayChunk.RenderBatch(m_deviceResources);
 
-	//
-	RenderRay(context);
+	// Render ray if the rendering bool is true
+	if (bVisualizeRay) 
+	{
+		RenderRay(context);
+	}
 
 	m_deviceResources->Present();
 }
-
-
 
 
 // Helper method to clear the back buffers.
@@ -432,8 +421,6 @@ context->RSSetViewports(1, &viewport);
 
 m_deviceResources->PIXEndEvent();
 }
-
-
 
 
 void XM_CALLCONV Game::DrawGrid(FXMVECTOR xAxis, FXMVECTOR yAxis, FXMVECTOR origin, size_t xdivs, size_t ydivs, GXMVECTOR color)
@@ -484,8 +471,6 @@ m_deviceResources->PIXEndEvent();
 }
 
 
-
-
 void Game::RenderRay(ID3D11DeviceContext* context) {
 	// Source: https://github.com/microsoft/DirectXTK/wiki/DebugDraw
 
@@ -519,35 +504,39 @@ void Game::RenderRay(ID3D11DeviceContext* context) {
 	m_batchEffect->Apply(context);
 	context->IASetInputLayout(m_batchInputLayout.Get());
 
+	m_batch->Begin();
 
+	// DRAW HERE
+	Vector3 start = PickingRay.position;
+	Vector3 direction = PickingRay.direction * 1500;
 
-	if (visualize_PickingRay) {
-		m_batch->Begin();
+	DrawRay(
+		m_batch.get(),
+		XMVectorSet(start.x, start.y, start.z, 1.0f), XMVectorSet(direction.x, direction.y, direction.z, 1.0f),
+		false, DirectX::Colors::Red
+		);
 
-		// DRAW HERE
-		Vector3 start = PickingRay.position;
-		Vector3 direction = PickingRay.direction * -100;
+	std::vector<DirectX::SimpleMath::Vector3> points;
+	m_displayChunk.GetSelectedQuad(points);
 
-		DrawRay(
-			m_batch.get(),
-			XMVectorSet(start.x, start.y, start.z, 1.0f), XMVectorSet(direction.x, direction.y, direction.z, 1.0f),
-			false, DirectX::Colors::Red
-			);
+	DrawQuad(
+		m_batch.get(),
+		XMVectorSet(points[0].x, points[0].y, points[0].z, 1.0f), XMVectorSet(points[1].x, points[1].y, points[1].z, 1.0f),
+		XMVectorSet(points[2].x, points[2].y, points[2].z, 1.0f), XMVectorSet(points[3].x, points[3].y, points[3].z, 1.0f),
+		DirectX::Colors::Red
+		);
 
-		m_batch->End();
-	}
+	m_batch->End();
 }
-
-
-
 
 #pragma endregion
 
 
+
+
+
+
 #pragma region Message Handlers
-
-
-
 
 // Message handlers
 void Game::OnActivated()

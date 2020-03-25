@@ -111,6 +111,7 @@
     </ClInclude>
     <ClInclude Include="Debug.h" />
     <ClInclude Include="DebugDraw.h" />
+    <ClInclude Include="Toolbox.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -30,9 +30,9 @@ public:
 	void SetGridState(bool state);
 
 	// Basic game loop
-	void Tick(InputCommands * Input);
+	void Tick(InputCommands* Input);
 	void Render();
-
+	
 	// Rendering helpers
 	void Clear();
 
@@ -48,16 +48,17 @@ public:
 	void OnWindowSizeChanged(int width, int height);
 
 	// Tool specific
-	void BuildDisplayList(std::vector<SceneObject> * SceneGraph); //note vector passed by reference 
+	void BuildDisplayList(std::vector<SceneObject>* SceneGraph);	// Note vector passed by reference 
 	void BuildDisplayChunk(ChunkObject *SceneChunk);
-	void SaveDisplayChunk(ChunkObject *SceneChunk);	//saves geometry et al
+	void SaveDisplayChunk(ChunkObject *SceneChunk);					// Saves geometry et al
 	//void ClearDisplayList();
 
-	// Picking
-	DirectX::XMVECTOR GetPickingVector(int window_x, int window_y, bool visualize);
-	int MousePicking(int window_x, int window_y, bool visua);
+	// Picking specific
+	DirectX::XMVECTOR GetPickingVector(int window_x, int window_y);		// Picking vector requires window dimensions, visualize = true to show vector on-screen
+	int MousePicking();																	// Mouse picking will return ID of selected object
+	void MouseEditing();																// Mouse editing will edit the terrain if edit_toggle is true (m_toolInputCommands)
+	//
 	DirectX::SimpleMath::Ray PickingRay;
-	bool visualize_PickingRay = false;
 
 #ifdef DXTK_AUDIO
 	void NewAudioDevice();
@@ -65,17 +66,34 @@ public:
 
 private:
 
+	// Update the editor
 	void Update(DX::StepTimer const& timer);
 
 	// Clamp x between min/max
 	float Clamp(float x, float min, float max);
 
+	// Render the picking ray
+	void RenderRay(ID3D11DeviceContext* context);
+
+
+
+
+
+
 	// Mouse location on viewport and logging function for debugging etc.
 	int prevMouseX = 0;
 	int prevMouseY = 0;
+	// DirectX Client Size
+	int DX_client_xDim;
+	int DX_client_yDim;
 
 	// Object selection
 	int selectedID = -1;
+
+
+
+
+
 
 	//
 	void CreateDeviceDependentResources();
@@ -87,24 +105,24 @@ private:
 
 	void XM_CALLCONV DrawGrid(DirectX::FXMVECTOR xAxis, DirectX::FXMVECTOR yAxis, DirectX::FXMVECTOR origin, size_t xdivs, size_t ydivs, DirectX::GXMVECTOR color);
 
-	void RenderRay(ID3D11DeviceContext* context);
-
-	//tool specific
+	// Tool specific
 	std::vector<DisplayObject>			m_displayList;
 	DisplayChunk						m_displayChunk;
 	InputCommands						m_InputCommands;
 
-	//functionality
+	// Functionality
 	float								m_movespeed;
+	bool bWireframe						= false;
+	bool bVisualizeRay					= false;
 
-	//camera
+	// Camera
 	DirectX::SimpleMath::Vector3		m_camPosition;
 	DirectX::SimpleMath::Vector3		m_camOrientation;
 	DirectX::SimpleMath::Vector3		m_camLookAt;
 	DirectX::SimpleMath::Vector3		m_camLookDirection;
 	DirectX::SimpleMath::Vector3		m_camRight;
 	
-	//control variables
+	// Control variables
 	bool m_grid;							//grid rendering on / off
 	// Device resources.
     std::shared_ptr<DX::DeviceResources>    m_deviceResources;

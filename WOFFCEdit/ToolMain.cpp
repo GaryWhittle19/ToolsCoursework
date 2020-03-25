@@ -8,19 +8,26 @@
 //ToolMain Class
 ToolMain::ToolMain()
 {
-	m_currentChunk = 0;		//default value
-	m_selectedObject = 0;	//initial selection ID
-	m_sceneGraph.clear();	//clear the vector for the scenegraph
+	m_currentChunk = 0;		// Default value
+	m_selectedObject = 0;	// Initial selection ID
+	m_sceneGraph.clear();	// Clear the vector for the scenegraph
 	m_databaseConnection = NULL;
 
-	//zero input commands
+	// Zero the input commands
 	m_toolInputCommands.forward		= false;
 	m_toolInputCommands.back		= false;
 	m_toolInputCommands.left		= false;
 	m_toolInputCommands.right		= false;
+	m_toolInputCommands.up			= false;
+	m_toolInputCommands.down		= false;
 	m_toolInputCommands.mouseLeft	= false;
+	m_toolInputCommands.mouseRight  = false;
+	m_toolInputCommands.sprint		= false;
+	m_toolInputCommands.wireframe_toggle	= false;
+	m_toolInputCommands.edit_toggle = false;
 	m_toolInputCommands.x			= 0;
 	m_toolInputCommands.y			= 0;
+	
 }
 
 ToolMain::~ToolMain()
@@ -31,7 +38,6 @@ ToolMain::~ToolMain()
 
 int ToolMain::getCurrentSelectionID()
 {
-
 	return m_selectedObject;
 }
 
@@ -291,24 +297,37 @@ void ToolMain::Tick(MSG *msg)
 	//Renderer Update Call
 	m_d3dRenderer.Tick(&m_toolInputCommands);
 	if (m_toolInputCommands.mouseLeft) {
-		m_pickingVector = m_d3dRenderer.GetPickingVector(m_width, m_height, true);
-		m_selectedObject = m_d3dRenderer.MousePicking(m_width, m_height, false);
-		//m_selectedTerrain = m_d3dRenderer.MouseEditing(m_pickingVector);
-		m_toolInputCommands.mouseLeft = false;
+		// TODO: Create and return the picking vector to be used for terrain manipulation or object manipulation
+		m_pickingVector = m_d3dRenderer.GetPickingVector(m_width, m_height);
+		// Terrain
+		if (m_toolInputCommands.edit_toggle) 
+		{
+			m_d3dRenderer.MouseEditing();
+		}
+		else {
+			m_selectedObject = m_d3dRenderer.MousePicking();
+			m_toolInputCommands.mouseLeft = false;
+		}
 	}
 }
 
 void ToolMain::UpdateInput(MSG * msg)
 {
+	m_toolInputProcessor.ResetKeys();
+	bool wasDown, isDown;
+	// Message handling
 	switch (msg->message)
 	{
 	// Global inputs - mouse position/buttons and keyboard
 	case WM_KEYDOWN:
-		m_keyArray[msg->wParam] = true;
+		wasDown = ((msg->lParam & (1 << 30)) != 0);
+		isDown = ((msg->lParam & (1 << 31)) == 0);
+		m_toolInputProcessor.SetKey(msg->wParam, isDown, false, !wasDown && isDown);
 		break;
 
 	case WM_KEYUP:
-		m_keyArray[msg->wParam] = false;
+		wasDown = ((msg->lParam & (1 << 30)) != 0);
+		m_toolInputProcessor.SetKey(msg->wParam, false, wasDown, false);
 		break;
 
 	case WM_MOUSEMOVE:
@@ -320,13 +339,11 @@ void ToolMain::UpdateInput(MSG * msg)
 		m_toolInputCommands.mouseLeft = true;
 		break;
 
-		// Disabled for ease of picking implementation 
-	/*case WM_LBUTTONUP:	
+	case WM_LBUTTONUP:	
 		m_toolInputCommands.mouseLeft = false;
-		break;*/
+		break;
 
 	case WM_RBUTTONDOWN:
-		Debug::Out("hi");
 		m_toolInputCommands.mouseRight = true;
 		break;
 
@@ -335,18 +352,36 @@ void ToolMain::UpdateInput(MSG * msg)
 		break;
 	}
 
+	// Assign keys to input functionalities
 	// Movement
-	m_toolInputCommands.forward = m_keyArray['W'];
-	m_toolInputCommands.left = m_keyArray['A'];
-	m_toolInputCommands.back = m_keyArray['S'];
-	m_toolInputCommands.right = m_keyArray['D'];
-	m_toolInputCommands.up = m_keyArray['E'];
-	m_toolInputCommands.down = m_keyArray['Q'];
-
+	m_toolInputCommands.forward = m_toolInputProcessor.IsKeyDown('W');
+	m_toolInputCommands.left = m_toolInputProcessor.IsKeyDown('A');
+	m_toolInputCommands.back = m_toolInputProcessor.IsKeyDown('S');
+	m_toolInputCommands.right = m_toolInputProcessor.IsKeyDown('D');
+	m_toolInputCommands.up = m_toolInputProcessor.IsKeyDown('E');
+	m_toolInputCommands.down = m_toolInputProcessor.IsKeyDown('Q');
+	// Wireframe
+	if (m_toolInputProcessor.WasKeyReleased('Z'))
+	{
+		m_toolInputCommands.wireframe_toggle = !m_toolInputCommands.wireframe_toggle;
+		Debug::Out("Wireframe!");
+	}
 	// Camera sprint
 	if (GetKeyState(VK_SHIFT) & 0x8000)	// & 0x8000 gives real-time key state
 	{
-		m_toolInputCommands.lShift = true;
+		m_toolInputCommands.sprint = true;
 	}
-	else m_toolInputCommands.lShift = false;
+	else m_toolInputCommands.sprint = false;
+	// Terrain/object manipulation toggle
+	if (m_toolInputProcessor.WasKeyReleased('T'))
+	{
+		m_toolInputCommands.edit_toggle = !m_toolInputCommands.edit_toggle;
+		Debug::Out("Terrain!");
+	}
+	// Picking vector visualization toggle
+	if (m_toolInputProcessor.WasKeyReleased('R'))
+	{
+		m_toolInputCommands.ray_toggle = !m_toolInputCommands.ray_toggle;
+		Debug::Out("Ray!");
+	}
 }
