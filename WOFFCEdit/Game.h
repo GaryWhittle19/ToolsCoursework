@@ -13,6 +13,9 @@
 #include "DisplayChunk.h"
 #include "ChunkObject.h"
 #include "InputCommands.h"
+#include "Picking.h"
+#include "Debug.h"
+#include "Toolbox.h"
 #include <vector>
 
 
@@ -53,12 +56,11 @@ public:
 	void SaveDisplayChunk(ChunkObject *SceneChunk);					// Saves geometry et al
 	//void ClearDisplayList();
 
-	// Picking specific
-	DirectX::XMVECTOR GetPickingVector(int window_x, int window_y);		// Picking vector requires window dimensions, visualize = true to show vector on-screen
-	int MousePicking();																	// Mouse picking will return ID of selected object
-	void UpdateSculptSettings();																// Mouse editing will edit the terrain if edit_toggle is true (m_toolInputCommands)
-	//
-	DirectX::SimpleMath::Ray PickingRay;
+	// Picking
+	void Pick(int& object_ID);
+	void Pick();
+	// Mouse editing will edit the terrain if edit_toggle is true (m_toolInputCommands)
+	void UpdateSculptSettings();																
 
 #ifdef DXTK_AUDIO
 	void NewAudioDevice();
@@ -68,14 +70,10 @@ private:
 
 	// Update the editor
 	void Update(DX::StepTimer const& timer);
-
-	// Render the picking ray
+	void UpdateInput();
+	void UpdateCamera();
+	// Picking ray
 	void RenderRay(ID3D11DeviceContext* context);
-
-
-
-
-
 
 	// Mouse location on viewport and logging function for debugging etc.
 	int prevMouseX = 0;
@@ -84,6 +82,10 @@ private:
 	int DX_client_xDim;
 	int DX_client_yDim;
 
+	// Handles our object and terrain picking
+	PickingHandler picking_handler;
+	DirectX::SimpleMath::Ray picking_ray;
+
 	// Terrain manipulation
 	int	target_brush_var = 0;					// For targeting brush variables... 0 is size, 1 is intensity (see below)
 	float brush_size = 25.0f;					// 0 
@@ -91,11 +93,6 @@ private:
 
 	// Object selection
 	int selectedID = -1;
-
-
-
-
-
 
 	//
 	void CreateDeviceDependentResources();

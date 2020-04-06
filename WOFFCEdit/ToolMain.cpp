@@ -307,19 +307,14 @@ void ToolMain::Tick(MSG *msg)
 	m_d3dRenderer.UpdateSculptSettings(); 
 
 	if (m_toolInputCommands.mouseLeft) {
-		// TODO: Create and return the picking vector to be used for terrain manipulation or object manipulation
-
-		//m_pickingVector = m_d3dRenderer.GetPickingVector(m_width, m_height);
-
 		if (m_toolInputCommands.edit_toggle) 
 		{
-			// m_d3dRenderer.MouseSculpting();
-			m_pickingVector = m_d3dRenderer.GetPickingVector(m_width, m_height);
-		}
-
-		else {
-			// m_selectedObject = m_d3dRenderer.MousePicking();
+			m_d3dRenderer.Pick(m_selectedObject);	// Object picking
 			m_toolInputCommands.mouseLeft = false;
+		}
+		else 
+		{
+			m_d3dRenderer.Pick();					// Terrain manipulation
 		}
 	}
 }

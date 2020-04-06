@@ -6,6 +6,7 @@
 #include "sqlite3.h"
 #include "SceneObject.h"
 #include "InputCommands.h"
+#include "Picking.h"
 #include <vector>
 
 class ToolMain
@@ -52,5 +53,6 @@ private:	//variables
 	int m_height;
 	int m_currentChunk;						// The current chunk of thedatabase that we are operating on.  Dictates loading and saving. 
 	
+	PickingHandler m_pickingHandler;
 	DirectX::XMVECTOR m_pickingVector;
 };
