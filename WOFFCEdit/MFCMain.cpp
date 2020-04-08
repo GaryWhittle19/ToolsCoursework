@@ -3,6 +3,10 @@
 
 
 BEGIN_MESSAGE_MAP(MFCMain, CWinApp)
+	// TOOLBAR
+	ON_COMMAND(ID_BUTTON_SAVE, &MFCMain::ToolbarSaveButton)
+	ON_COMMAND(ID_BUTTON_WIRE, &MFCMain::MenuEditWireframe)
+	ON_COMMAND(ID_BUTTON_RAY, &MFCMain::MenuEditRayVisualize)
 	// FILE
 	ON_COMMAND(ID_FILE_QUIT, &MFCMain::MenuFileQuit)
 	ON_COMMAND(ID_FILE_SAVETERRAIN, &MFCMain::MenuFileSaveTerrain)
@@ -13,8 +17,7 @@ BEGIN_MESSAGE_MAP(MFCMain, CWinApp)
 	// MODE
 	ON_COMMAND(ID_MODE_SELECT, &MFCMain::MenuModeSelect)
 	ON_COMMAND(ID_MODE_TERRAIN, &MFCMain::MenuModeTerrain)
-
-	ON_COMMAND(ID_BUTTON40001,	&MFCMain::ToolbarSaveButton)
+	
 	ON_UPDATE_COMMAND_UI(ID_INDICATOR_TOOL, &CMyFrame::OnUpdatePage)
 END_MESSAGE_MAP()
 
@@ -24,8 +27,8 @@ BOOL MFCMain::InitInstance()
 	m_frame = new CMyFrame();
 	m_pMainWnd = m_frame;
 
-	m_frame->Create(	NULL,
-					_T("Planet Of Warfare Editor"),
+	m_frame->Create(NULL,
+					_T("G-Engine 2020"),
 					WS_OVERLAPPEDWINDOW,
 					CRect(0, 0, 1024, 768),
 					NULL,

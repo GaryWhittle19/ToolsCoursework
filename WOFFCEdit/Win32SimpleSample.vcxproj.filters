@@ -128,11 +128,11 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="toolbar1.bmp">
-      <Filter>Resource Files</Filter>
-    </Image>
+    <Media Include="database\data\Scene1.fbx" />
   </ItemGroup>
   <ItemGroup>
-    <Media Include="database\data\Scene1.fbx" />
+    <Image Include="toolbar_1.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

@@ -373,8 +373,6 @@ void ToolMain::UpdateInput(MSG * msg)
 		break;
 	}
 
-	// Assign keys to input functionalities
-
 	// MOVEMENT
 	// Directions
 	m_toolInputCommands.forward = m_toolInputProcessor.IsKeyDown('W');
