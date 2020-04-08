@@ -29,7 +29,6 @@ ToolMain::ToolMain()
 	m_toolInputCommands.wireframe_toggle	= false;
 	m_toolInputCommands.ray_toggle			= false;
 	//
-	m_toolInputCommands.edit_toggle			= false;
 	m_toolInputCommands.brush_control_int	= 0;
 	m_toolInputCommands.decrease			= false;
 	m_toolInputCommands.increase			= false;
@@ -42,7 +41,6 @@ ToolMain::~ToolMain()
 {
 	sqlite3_close(m_databaseConnection);		//close the database connection
 }
-
 
 int ToolMain::getCurrentSelectionID()
 {
@@ -292,6 +290,21 @@ void ToolMain::onActionSaveTerrain()
 	m_d3dRenderer.SaveDisplayChunk(&m_chunk);
 }
 
+void ToolMain::onActionChangeMode(int mode)
+{
+	m_pickingMode = mode;
+}
+
+void ToolMain::onActionToggleWireframe()
+{
+	m_toolInputCommands.wireframe_toggle = !m_toolInputCommands.wireframe_toggle;
+}
+
+void ToolMain::onActionToggleRayVisualization()
+{
+	m_toolInputCommands.ray_toggle = !m_toolInputCommands.ray_toggle;
+}
+
 void ToolMain::Tick(MSG *msg)
 {
 	//do we have a selection
@@ -307,12 +320,12 @@ void ToolMain::Tick(MSG *msg)
 	m_d3dRenderer.UpdateSculptSettings(); 
 
 	if (m_toolInputCommands.mouseLeft) {
-		if (m_toolInputCommands.edit_toggle) 
+		if (m_pickingMode == 0) 
 		{
 			m_d3dRenderer.Pick(m_selectedObject);	// Object picking
 			m_toolInputCommands.mouseLeft = false;
 		}
-		else 
+		else if (m_pickingMode == 1)
 		{
 			m_d3dRenderer.Pick();					// Terrain manipulation
 		}
@@ -361,42 +374,35 @@ void ToolMain::UpdateInput(MSG * msg)
 	}
 
 	// Assign keys to input functionalities
-	// Movement
+
+	// MOVEMENT
+	// Directions
 	m_toolInputCommands.forward = m_toolInputProcessor.IsKeyDown('W');
 	m_toolInputCommands.left = m_toolInputProcessor.IsKeyDown('A');
 	m_toolInputCommands.back = m_toolInputProcessor.IsKeyDown('S');
 	m_toolInputCommands.right = m_toolInputProcessor.IsKeyDown('D');
 	m_toolInputCommands.up = m_toolInputProcessor.IsKeyDown('E');
 	m_toolInputCommands.down = m_toolInputProcessor.IsKeyDown('Q');
-	// Wireframe
-	if (m_toolInputProcessor.WasKeyReleased('Z'))
-	{
-		m_toolInputCommands.wireframe_toggle = !m_toolInputCommands.wireframe_toggle;
-		Debug::Out("Wireframe!");
-	}
 	// Camera sprint
 	if (GetKeyState(VK_SHIFT) & 0x8000)	// & 0x8000 gives real-time key state
 	{
 		m_toolInputCommands.sprint = true;
 	}
 	else m_toolInputCommands.sprint = false;
-	// Terrain/object manipulation toggle
-	if (m_toolInputProcessor.WasKeyReleased('T'))
-	{
-		m_toolInputCommands.edit_toggle = !m_toolInputCommands.edit_toggle;
-		Debug::Out("Terrain!");
-	}
+
+	// VISUALIZATION
 	// Picking vector visualization toggle
-	if (m_toolInputProcessor.WasKeyReleased('R'))
+	/*if (m_toolInputProcessor.WasKeyReleased('R'))
 	{
 		m_toolInputCommands.ray_toggle = !m_toolInputCommands.ray_toggle;
 		Debug::Out("Ray!");
-	}
+	}*/
+
+	// TERRAIN SETTINGS
 	// Increase and decrease target control variable
 	if (GetKeyState(VK_LEFT) & 0x8000)
 	{
 		m_toolInputCommands.decrease = true;
-		
 	}
 	else m_toolInputCommands.decrease = false;
 	if (GetKeyState(VK_RIGHT) & 0x8000)
@@ -404,6 +410,7 @@ void ToolMain::UpdateInput(MSG * msg)
 		m_toolInputCommands.increase = true;
 	}
 	else m_toolInputCommands.increase = false;
+
 	// Change target brush variable being controlled
 	if (m_toolInputProcessor.WasKeyReleased('C'))
 	{

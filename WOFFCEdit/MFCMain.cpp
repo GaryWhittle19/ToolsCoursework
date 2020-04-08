@@ -3,10 +3,18 @@
 
 
 BEGIN_MESSAGE_MAP(MFCMain, CWinApp)
-	ON_COMMAND(ID_FILE_QUIT,	&MFCMain::MenuFileQuit)
+	// FILE
+	ON_COMMAND(ID_FILE_QUIT, &MFCMain::MenuFileQuit)
 	ON_COMMAND(ID_FILE_SAVETERRAIN, &MFCMain::MenuFileSaveTerrain)
+	// EDIT
 	ON_COMMAND(ID_EDIT_SELECT, &MFCMain::MenuEditSelect)
-	ON_COMMAND(ID_BUTTON40001,	&MFCMain::ToolBarButton1)
+	ON_COMMAND(ID_EDIT_WIREFRAME, &MFCMain::MenuEditWireframe)
+	ON_COMMAND(ID_EDIT_RAY, &MFCMain::MenuEditRayVisualize)
+	// MODE
+	ON_COMMAND(ID_MODE_SELECT, &MFCMain::MenuModeSelect)
+	ON_COMMAND(ID_MODE_TERRAIN, &MFCMain::MenuModeTerrain)
+
+	ON_COMMAND(ID_BUTTON40001,	&MFCMain::ToolbarSaveButton)
 	ON_UPDATE_COMMAND_UI(ID_INDICATOR_TOOL, &CMyFrame::OnUpdatePage)
 END_MESSAGE_MAP()
 
@@ -103,17 +111,34 @@ void MFCMain::MenuEditSelect()
 	m_ToolSelectDialogue.SetObjectData(&m_ToolSystem.m_sceneGraph, &m_ToolSystem.m_selectedObject);
 }
 
-void MFCMain::ToolBarButton1()
+void MFCMain::MenuEditWireframe()
 {
-	
-	m_ToolSystem.onActionSave();
+	m_ToolSystem.onActionToggleWireframe();
 }
 
+void MFCMain::MenuEditRayVisualize()
+{
+	m_ToolSystem.onActionToggleRayVisualization();
+}
+
+void MFCMain::MenuModeSelect()
+{
+	m_ToolSystem.onActionChangeMode(0);
+}
+
+void MFCMain::MenuModeTerrain()
+{
+	m_ToolSystem.onActionChangeMode(1);
+}
+
+void MFCMain::ToolbarSaveButton()
+{
+	m_ToolSystem.onActionSave();
+}
 
 MFCMain::MFCMain()
 {
 }
-
 
 MFCMain::~MFCMain()
 {
