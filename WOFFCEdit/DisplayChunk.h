@@ -19,9 +19,8 @@ public:
 	void LoadHeightMap(std::shared_ptr<DX::DeviceResources>  DevResources);
 	void SaveHeightMap();			//saves the heigtmap back to file.
 	void UpdateTerrain();			//updates the geometry based on the heigtmap
-	void GenerateHeightmap(DirectX::SimpleMath::Ray PickingVector, float radius, float intensity); // creates or alters the heightmap
-
-	void GetSelectedVertices(std::vector<DirectX::SimpleMath::Vector3>& points); // Return selected quad
+	void UpdateHeightmap();
+	void GenerateHeightmap(DirectX::SimpleMath::Ray PickingVector, float radius, float intensity, DirectX::SimpleMath::Vector3& originRef); // creates or alters the heightmap
 
 	std::unique_ptr<DirectX::PrimitiveBatch<DirectX::VertexPositionNormalTexture>>  m_batch;
 	std::unique_ptr<DirectX::BasicEffect>       m_terrainEffect;
@@ -30,13 +29,9 @@ public:
 	Microsoft::WRL::ComPtr<ID3D11InputLayout>   m_terrainInputLayout;
 
 private:
-	
+
 	// Terrain editing
-	std::vector<DirectX::SimpleMath::Vector3> selected_vertices;
-	//DirectX::SimpleMath::Vector3 selected_quad[4]; // Array of xz points for selected quad
-
-
-
+	
 	DirectX::VertexPositionNormalTexture m_terrainGeometry[TERRAINRESOLUTION][TERRAINRESOLUTION];
 	BYTE m_heightMap[TERRAINRESOLUTION*TERRAINRESOLUTION];
 	void CalculateTerrainNormals();

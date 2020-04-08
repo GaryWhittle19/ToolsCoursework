@@ -90,7 +90,8 @@ DirectX::SimpleMath::Ray PickingHandler::PerformPicking(
 	DirectX::SimpleMath::Matrix view,
 	float min_depth, float max_depth,
 	DisplayChunk& chunk, DirectX::SimpleMath::Vector3 campos,
-	int brush_size, int brush_intensity)
+	int brush_size, int brush_intensity,
+	DirectX::SimpleMath::Vector3& originRef)
 {
 	// Set up near and far planes of frustum with mouse X and mouse Y passed down from Toolmain. 
 	// They may look the same but note, the difference in Z
@@ -120,7 +121,7 @@ DirectX::SimpleMath::Ray PickingHandler::PerformPicking(
 	PickingRay.direction = PickingVector;
 
 	// Generate the heightmap
-	chunk.GenerateHeightmap(PickingRay, brush_size, brush_intensity);
+	chunk.GenerateHeightmap(PickingRay, brush_size, brush_intensity, originRef);
 
 	// Return the ray
 	return PickingRay;

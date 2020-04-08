@@ -23,7 +23,7 @@
 // provides a game loop.
 class Game : public DX::IDeviceNotify
 {
-public:
+public: // Members
 
 	Game();
 	~Game();
@@ -66,7 +66,7 @@ public:
 	void NewAudioDevice();
 #endif
 
-private:
+private: // Members
 
 	// Update the editor
 	void Update(DX::StepTimer const& timer);
@@ -74,6 +74,17 @@ private:
 	void UpdateCamera();
 	// Picking ray
 	void RenderRay(ID3D11DeviceContext* context);
+	void RenderBrush(ID3D11DeviceContext* context);
+	//
+	void CreateDeviceDependentResources();
+	void CreateWindowSizeDependentResources();
+	//
+	void XM_CALLCONV DrawGrid(DirectX::FXMVECTOR xAxis, DirectX::FXMVECTOR yAxis, DirectX::FXMVECTOR origin, size_t xdivs, size_t ydivs, DirectX::GXMVECTOR color);
+
+private: // Variables
+
+	// Brush origin point
+	DirectX::SimpleMath::Vector3 brush_origin;
 
 	// Mouse location on viewport and logging function for debugging etc.
 	int prevMouseX = 0;
@@ -95,14 +106,9 @@ private:
 	int selectedID = -1;
 
 	//
-	void CreateDeviceDependentResources();
-	void CreateWindowSizeDependentResources();
-	//
 	float _fov = 70.0f;
 	float _near = 0.01f;
 	float _far = 1000.0f;
-
-	void XM_CALLCONV DrawGrid(DirectX::FXMVECTOR xAxis, DirectX::FXMVECTOR yAxis, DirectX::FXMVECTOR origin, size_t xdivs, size_t ydivs, DirectX::GXMVECTOR color);
 
 	// Tool specific
 	std::vector<DisplayObject>			m_displayList;
@@ -111,8 +117,6 @@ private:
 
 	// Functionality
 	float								m_movespeed;
-	bool bWireframe						= false;
-	bool bVisualizeRay					= false;
 
 	// Camera
 	DirectX::SimpleMath::Vector3		m_camPosition;

@@ -293,6 +293,7 @@ void ToolMain::onActionSaveTerrain()
 void ToolMain::onActionChangeMode(int mode)
 {
 	m_pickingMode = mode;
+	m_toolInputCommands.edit_toggle = mode;
 }
 
 void ToolMain::onActionToggleWireframe()

@@ -184,10 +184,6 @@ void Game::UpdateInput()
 	if (m_InputCommands.left) { m_camPosition -= m_camRight * m_movespeed; }
 	if (m_InputCommands.up) { m_camPosition.y += m_movespeed; }
 	if (m_InputCommands.down) { m_camPosition.y -= m_movespeed; }
-	// Wireframe
-	bWireframe = m_InputCommands.wireframe_toggle;
-	// Picking ray visualization
-	bVisualizeRay = m_InputCommands.ray_toggle;
 }
 
 void Game::UpdateCamera()
@@ -278,7 +274,8 @@ void Game::Pick()
 		m_deviceResources->GetScreenViewport().Width, m_deviceResources->GetScreenViewport().Height,
 		m_InputCommands.x, m_InputCommands.y, m_world, m_projection, m_view,
 		m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth,
-		m_displayChunk, m_camPosition, brush_size, brush_intensity);
+		m_displayChunk, m_camPosition, brush_size, brush_intensity,
+		brush_origin);
 }
 
 #pragma endregion
@@ -347,15 +344,19 @@ void Game::Render()
 	context->OMSetBlendState(m_states->Opaque(), nullptr, 0xFFFFFFFF);
 	context->OMSetDepthStencilState(m_states->DepthDefault(), 0);
 	context->RSSetState(m_states->CullNone());
-	if (bWireframe) { context->RSSetState(m_states->Wireframe()); };
+	if (m_InputCommands.wireframe_toggle) { context->RSSetState(m_states->Wireframe()); };
 
 	// Render the batch,  This is handled in the Display chunk becuase it has the potential to get complex
 	m_displayChunk.RenderBatch(m_deviceResources);
 
 	// Render ray if the rendering bool is true
-	if (bVisualizeRay) 
+	if (m_InputCommands.ray_toggle) 
 	{
 		RenderRay(context);
+	}
+	if (m_InputCommands.edit_toggle)
+	{
+		RenderBrush(context);
 	}
 
 	m_deviceResources->Present();
@@ -477,16 +478,48 @@ void Game::RenderRay(ID3D11DeviceContext* context) {
 		false, DirectX::Colors::Red
 		);
 
-	std::vector<DirectX::SimpleMath::Vector3> points;
-	m_displayChunk.GetSelectedVertices(points);
+	m_batch->End();
+}
 
-	for (int i = 0; i < points.size(); i++) {
-		DrawRay(
-			m_batch.get(),
-			XMVectorSet(points[i].x, points[i].y, points[i].z, 1.0f), XMVectorSet(0.0f, brush_intensity, 0.0f, 1.0f),
-			true, DirectX::Colors::Red
-			);
+void Game::RenderBrush(ID3D11DeviceContext* context)
+{
+	// SETUP
+	m_states = std::make_unique<CommonStates>(m_deviceResources->GetD3DDevice());
+	m_batch = std::make_unique<PrimitiveBatch<VertexPositionColor>>(context);
+
+	m_batchEffect = std::make_unique<DirectX::BasicEffect>(m_deviceResources->GetD3DDevice());
+	m_batchEffect->SetVertexColorEnabled(true);
+	m_batchEffect->SetView(m_view);
+	m_batchEffect->SetProjection(m_projection);
+
+	{
+		void const* shaderByteCode;
+		size_t byteCodeLength;
+
+		m_batchEffect->GetVertexShaderBytecode(&shaderByteCode, &byteCodeLength);
+		DX::ThrowIfFailed(
+			m_deviceResources->GetD3DDevice()->CreateInputLayout(
+				VertexPositionColor::InputElements, VertexPositionColor::InputElementCount,
+				shaderByteCode, byteCodeLength,
+				m_batchInputLayout.ReleaseAndGetAddressOf()
+			)
+		);
 	}
+
+	context->OMSetBlendState(m_states->Opaque(), nullptr, 0xFFFFFFFF);
+	context->OMSetDepthStencilState(m_states->DepthDefault(), 0);
+	context->RSSetState(m_states->CullNone());
+
+	m_batchEffect->Apply(context);
+	context->IASetInputLayout(m_batchInputLayout.Get());
+
+	DirectX::BoundingSphere brush_sphere;
+	brush_sphere.Center = brush_origin;
+	brush_sphere.Radius = brush_size;
+
+	m_batch->Begin();
+
+	Draw(m_batch.get(), brush_sphere, DirectX::Colors::Red);
 
 	m_batch->End();
 }
@@ -608,9 +641,6 @@ void Game::BuildDisplayList(std::vector<SceneObject>* SceneGraph)
 		m_displayList.push_back(newDisplayObject);
 
 	}
-
-
-
 }
 
 void Game::BuildDisplayChunk(ChunkObject* SceneChunk)

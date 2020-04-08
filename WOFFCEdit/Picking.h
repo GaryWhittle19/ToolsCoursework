@@ -26,6 +26,7 @@ public:
 		float min_depth, float max_depth,
 		DisplayChunk& chunk, 
 		DirectX::SimpleMath::Vector3 campos,
-		int brush_size, int brush_intensity);			// Arguments for terrain
+		int brush_size, int brush_intensity,
+		DirectX::SimpleMath::Vector3& originRef);			// Arguments for terrain
 };
 

@@ -142,6 +142,8 @@ void DisplayChunk::LoadHeightMap(std::shared_ptr<DX::DeviceResources>  DevResour
 
 void DisplayChunk::SaveHeightMap()
 {
+	UpdateHeightmap();
+
 	FILE* pFile = NULL;
 
 	// Open The File In Read / Binary Mode.
@@ -174,12 +176,24 @@ void DisplayChunk::UpdateTerrain()
 	CalculateTerrainNormals();
 }
 
-
-void DisplayChunk::GenerateHeightmap(DirectX::SimpleMath::Ray PickingVector, float radius, float intensity)
+void DisplayChunk::UpdateHeightmap()
 {
-	// Clear the selected vertices vector.
-	selected_vertices.clear();
+	//all this is doing is transferring the height from the heightmap into the terrain geometry.
+	int index;
+	for (size_t i = 0; i < TERRAINRESOLUTION; i++)
+	{
+		for (size_t j = 0; j < TERRAINRESOLUTION; j++)
+		{
+			index = (TERRAINRESOLUTION * i) + j;
+			m_heightMap[index] = m_terrainGeometry[i][j].position.y / m_terrainHeightScale;
+		}
+	}
+}
 
+
+
+void DisplayChunk::GenerateHeightmap(DirectX::SimpleMath::Ray PickingVector, float radius, float intensity, DirectX::SimpleMath::Vector3& originRef)
+{
 	DirectX::SimpleMath::Vector3 v1, v2, v3, v4;			// Position vector veriables 
 	float distance = 10000.0f;								// Distance 
 
@@ -195,37 +209,23 @@ void DisplayChunk::GenerateHeightmap(DirectX::SimpleMath::Ray PickingVector, flo
 			// Perform intersection test. 
 			if (PickingVector.Intersects(v1, v2, v3, distance) || PickingVector.Intersects(v1, v4, v3, distance)) {
 				if (m_terrainGeometry[i][j].position.y < PickingVector.position.y && m_terrainGeometry[i][j].position.y > PickingVector.direction.y * distance) {
-					// Perform the edit if the intersection returns true. 
-					m_terrainGeometry[i][j].position.y += intensity;
-					m_terrainGeometry[i][j + 1].position.y += intensity;
-					m_terrainGeometry[i + 1][j + 1].position.y += intensity;
-					m_terrainGeometry[i + 1][j].position.y += intensity;
-
-					// Update selected quad.
-					/*selected_quad[0] = m_terrainGeometry[i][j].position;
-					selected_quad[1] = m_terrainGeometry[i][j + 1].position;
-					selected_quad[2] = m_terrainGeometry[i + 1][j + 1].position;
-					selected_quad[3] = m_terrainGeometry[i + 1][j].position;*/
+					Vector3 centre = Vector3(m_terrainGeometry[i][j].position + m_terrainGeometry[i + 1][j + 1].position) / 2;
+					originRef = Vector3(centre);
 
 					for (size_t x = 0; x < TERRAINRESOLUTION - 1; x++)
-					{	// Loop through quads again to do a distance check on the selected quad (or rather, vertex). If within radius, expand based on mapped ranged value.
+					{	// Loop through quads again to do a distance check on the selected vertex. If within radius, expand based on mapped ranged value.
 							// Problems:
 								// Based on one vertice, so it's a little inaccurate considering the point of origin is technically off a little. 
-								// Very expensive computationally. 
+								// Expensive computationally. 
 						for (int y = 0; y < TERRAINRESOLUTION - 1; y++)
 						{
-							float proximity = DirectX::SimpleMath::Vector3::Distance(m_terrainGeometry[x][y].position, m_terrainGeometry[i][j].position);
+							float proximity = DirectX::SimpleMath::Vector3::Distance(m_terrainGeometry[x][y].position, centre);
 							if (proximity < radius)
 							{
 								float mult = Toolbox::MappedClamp(proximity, 0.0f, radius, 1.0f, 0.0f);
 
 								// Perform the edit
 								m_terrainGeometry[x][y].position.y += intensity * mult;
-								// Fill selected vertices array. 
-								selected_vertices.push_back(m_terrainGeometry[x][y].position);
-								/*m_terrainGeometry[x][y + 1].position.y += intensity * mult;
-								m_terrainGeometry[x + 1][y + 1].position.y += intensity * mult;
-								m_terrainGeometry[x + 1][y].position.y += intensity * mult;*/
 							}
 						}
 					}
@@ -233,16 +233,6 @@ void DisplayChunk::GenerateHeightmap(DirectX::SimpleMath::Ray PickingVector, flo
 			}
 		}
 	}
-}
-
-// This function will simply populate a referenced vector with the selected quad's vertices, for purposes such as quad visualization. 
-void DisplayChunk::GetSelectedVertices(std::vector<DirectX::SimpleMath::Vector3>& points)
-{
-	points = selected_vertices;
-	/*for (int i = 0; i < 4; i++)
-	{
-		points.emplace_back(selected_quad[i]);
-	}*/
 }
 
 void DisplayChunk::CalculateTerrainNormals()
