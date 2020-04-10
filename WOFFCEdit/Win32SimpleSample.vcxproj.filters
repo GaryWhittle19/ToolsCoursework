@@ -17,6 +17,9 @@
     <Filter Include="SQLITE">
       <UniqueIdentifier>{a006b0b6-46b2-4c4f-808a-ec8fe3e790eb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Convenience">
+      <UniqueIdentifier>{ab52b321-6d7d-4cc6-ada0-3cad7edb8c34}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -59,9 +62,11 @@
     <ClCompile Include="SelectDialogue.cpp">
       <Filter>MFC</Filter>
     </ClCompile>
-    <ClCompile Include="DebugDraw.cpp" />
     <ClCompile Include="Picking.cpp">
       <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="DebugDraw.cpp">
+      <Filter>Convenience</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -112,11 +117,17 @@
     <ClInclude Include="SelectDialogue.h">
       <Filter>MFC</Filter>
     </ClInclude>
-    <ClInclude Include="Debug.h" />
-    <ClInclude Include="DebugDraw.h" />
-    <ClInclude Include="Toolbox.h" />
     <ClInclude Include="Picking.h">
       <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Toolbox.h">
+      <Filter>Convenience</Filter>
+    </ClInclude>
+    <ClInclude Include="DebugDraw.h">
+      <Filter>Convenience</Filter>
+    </ClInclude>
+    <ClInclude Include="Debug.h">
+      <Filter>Convenience</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -58,7 +58,7 @@ public: // Members
 
 	// Picking
 	void Pick(int& object_ID);
-	void Pick();
+	void Pick(bool b_editing_terrain);
 	// Mouse editing will edit the terrain if edit_toggle is true (m_toolInputCommands)
 	void UpdateSculptSettings();																
 

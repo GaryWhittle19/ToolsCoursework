@@ -328,8 +328,11 @@ void ToolMain::Tick(MSG *msg)
 		}
 		else if (m_pickingMode == 1)
 		{
-			m_d3dRenderer.Pick();					// Terrain manipulation
+			m_d3dRenderer.Pick(true);				// Terrain manipulation
 		}
+	}
+	if (m_pickingMode == 1 && !IsMoving()) {
+		m_d3dRenderer.Pick(false);					// Terrain brush visualization (only when stationary as performance heavy)
 	}
 }
 
@@ -389,14 +392,6 @@ void ToolMain::UpdateInput(MSG * msg)
 	}
 	else m_toolInputCommands.sprint = false;
 
-	// VISUALIZATION
-	// Picking vector visualization toggle
-	/*if (m_toolInputProcessor.WasKeyReleased('R'))
-	{
-		m_toolInputCommands.ray_toggle = !m_toolInputCommands.ray_toggle;
-		Debug::Out("Ray!");
-	}*/
-
 	// TERRAIN SETTINGS
 	// Increase and decrease target control variable
 	if (GetKeyState(VK_LEFT) & 0x8000)
@@ -418,4 +413,14 @@ void ToolMain::UpdateInput(MSG * msg)
 			m_toolInputCommands.brush_control_int = 0;
 		}
 	}
+}
+
+bool ToolMain::IsMoving() {
+	return (
+		m_toolInputCommands.forward ||
+		m_toolInputCommands.left	||
+		m_toolInputCommands.back	||
+		m_toolInputCommands.right	||
+		m_toolInputCommands.up		||
+		m_toolInputCommands.down);
 }

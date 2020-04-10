@@ -27,6 +27,7 @@ public:
 		DisplayChunk& chunk, 
 		DirectX::SimpleMath::Vector3 campos,
 		int brush_size, int brush_intensity,
-		DirectX::SimpleMath::Vector3& originRef);			// Arguments for terrain
+		DirectX::SimpleMath::Vector3& originRef,
+		bool b_editing);		// Arguments for terrain
 };
 

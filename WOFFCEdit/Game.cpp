@@ -268,14 +268,15 @@ void Game::Pick(int& object_ID)
 		m_displayList, m_camPosition);
 }
 
-void Game::Pick()
+void Game::Pick(bool b_editing_terrain)
 {
 	picking_ray = picking_handler.PerformPicking(
 		m_deviceResources->GetScreenViewport().Width, m_deviceResources->GetScreenViewport().Height,
 		m_InputCommands.x, m_InputCommands.y, m_world, m_projection, m_view,
 		m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth,
 		m_displayChunk, m_camPosition, brush_size, brush_intensity,
-		brush_origin);
+		brush_origin, b_editing_terrain);
+	Debug::Out("Visualizing!");
 }
 
 #pragma endregion

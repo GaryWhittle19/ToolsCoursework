@@ -20,7 +20,7 @@ public:
 	void SaveHeightMap();			//saves the heigtmap back to file.
 	void UpdateTerrain();			//updates the geometry based on the heigtmap
 	void UpdateHeightmap();
-	void GenerateHeightmap(DirectX::SimpleMath::Ray PickingVector, float radius, float intensity, DirectX::SimpleMath::Vector3& originRef); // creates or alters the heightmap
+	void GenerateHeightmap(DirectX::SimpleMath::Ray PickingVector, float radius, float intensity, DirectX::SimpleMath::Vector3& originRef, bool b_editing); // creates or alters the heightmap
 
 	std::unique_ptr<DirectX::PrimitiveBatch<DirectX::VertexPositionNormalTexture>>  m_batch;
 	std::unique_ptr<DirectX::BasicEffect>       m_terrainEffect;

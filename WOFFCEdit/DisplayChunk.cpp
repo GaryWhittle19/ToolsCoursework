@@ -115,12 +115,16 @@ void DisplayChunk::LoadHeightMap(std::shared_ptr<DX::DeviceResources>  DevResour
 	HRESULT rs;
 	rs = CreateDDSTextureFromFile(device, texturewstr.c_str(), NULL, &m_texture_diffuse);	//load tex into Shader resource	view and resource
 
-	//setup terrain effect
+	// Setup terrain effect
 	m_terrainEffect = std::make_unique<BasicEffect>(device);
 	m_terrainEffect->EnableDefaultLighting();
 	m_terrainEffect->SetLightingEnabled(true);
+	// Texture?
 	m_terrainEffect->SetTextureEnabled(true);
 	m_terrainEffect->SetTexture(m_texture_diffuse);
+	// Colour!
+	m_terrainEffect->SetDiffuseColor(DirectX::Colors::White);
+	
 
 	void const* shaderByteCode;
 	size_t byteCodeLength;
@@ -190,9 +194,7 @@ void DisplayChunk::UpdateHeightmap()
 	}
 }
 
-
-
-void DisplayChunk::GenerateHeightmap(DirectX::SimpleMath::Ray PickingVector, float radius, float intensity, DirectX::SimpleMath::Vector3& originRef)
+void DisplayChunk::GenerateHeightmap(DirectX::SimpleMath::Ray PickingVector, float radius, float intensity, DirectX::SimpleMath::Vector3& originRef, bool b_editing)
 {
 	DirectX::SimpleMath::Vector3 v1, v2, v3, v4;			// Position vector veriables 
 	float distance = 10000.0f;								// Distance 
@@ -212,27 +214,33 @@ void DisplayChunk::GenerateHeightmap(DirectX::SimpleMath::Ray PickingVector, flo
 					Vector3 centre = Vector3(m_terrainGeometry[i][j].position + m_terrainGeometry[i + 1][j + 1].position) / 2;
 					originRef = Vector3(centre);
 
-					for (size_t x = 0; x < TERRAINRESOLUTION - 1; x++)
-					{	// Loop through quads again to do a distance check on the selected vertex. If within radius, expand based on mapped ranged value.
-							// Problems:
-								// Based on one vertice, so it's a little inaccurate considering the point of origin is technically off a little. 
-								// Expensive computationally. 
-						for (int y = 0; y < TERRAINRESOLUTION - 1; y++)
-						{
-							float proximity = DirectX::SimpleMath::Vector3::Distance(m_terrainGeometry[x][y].position, centre);
-							if (proximity < radius)
+					// Only edit the terrain if b_editing is true
+					if (b_editing) {
+						for (size_t x = 0; x < TERRAINRESOLUTION - 1; x++)
+						{	// Loop through vertices again to do a distance check on the selected vertex. If within radius, expand based on mapped ranged value.
+								// Problems:
+									// Based on one vertice, so it's a little inaccurate considering the point of origin is technically off a little. 
+									// Expensive computationally. 
+							for (int y = 0; y < TERRAINRESOLUTION - 1; y++)
 							{
-								float mult = Toolbox::MappedClamp(proximity, 0.0f, radius, 1.0f, 0.0f);
+								float proximity = DirectX::SimpleMath::Vector3::Distance(m_terrainGeometry[x][y].position, centre);
+								if (proximity < radius)
+								{
+									float mult = Toolbox::MappedClamp(proximity, 0.0f, radius, 1.0f, 0.0f);
 
-								// Perform the edit
-								m_terrainGeometry[x][y].position.y += intensity * mult;
-							}
-						}
-					}
-				}
-			}
-		}
-	}
+									// Perform the edit
+									m_terrainGeometry[x][y].position.y += intensity * mult;
+								} // End conditional - if within radius
+
+							} // End looping through y's for this terrain x
+						} // End looping through x's for terrain
+
+					} // End conditional - if editing terrain
+				} // End conditional - height check to constrain editing to above terrain
+			} // End conditional - intersection check of picking vector
+
+		} // End for looping through j's for this terrain i
+	} // End looping through i's for terrain
 }
 
 void DisplayChunk::CalculateTerrainNormals()

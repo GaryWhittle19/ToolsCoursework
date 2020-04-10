@@ -29,6 +29,8 @@ public: // Methods
 	// Standard tick and update functions
 	void	Tick(MSG *msg);
 	void	UpdateInput(MSG *msg);
+
+	bool IsMoving();
 	
 public:	// Variables
 	std::vector<SceneObject>    m_sceneGraph;	// Our scenegraph storing all the objects in the current chunk
