@@ -3,6 +3,7 @@
 #include <afxext.h>
 #include "pch.h"
 #include "Game.h"
+#include "DisplayChunk.h"
 #include "sqlite3.h"
 #include "SceneObject.h"
 #include "InputCommands.h"
@@ -33,9 +34,9 @@ public: // Methods
 	bool IsMoving();
 	
 public:	// Variables
-	std::vector<SceneObject>    m_sceneGraph;	// Our scenegraph storing all the objects in the current chunk
-	ChunkObject					m_chunk;		// Our landscape chunk
-	int m_selectedObject;						// ID of current Selection
+	std::vector<SceneObject>    m_sceneGraph;		// Our scenegraph storing all the objects in the current chunk
+	ChunkObject					m_chunk;			// Our chunk data
+	int m_selectedObject;							// ID of current Selection
 
 private: // Methods
 	// void	onContentAdded();
@@ -49,15 +50,20 @@ private: // Variables
 
 	CRect	WindowRECT;						// Window area rectangle. 
 	
-	int xPos, yPos;							// Mouse x and y position
-	
 	sqlite3 *m_databaseConnection;			// sqldatabase handle
 
 	int m_width;							// Dimensions passed to directX
 	int m_height;
 	int m_currentChunk;						// The current chunk of thedatabase that we are operating on.  Dictates loading and saving. 
 	
-	int m_pickingMode = 0;
-	PickingHandler m_pickingHandler;
-	DirectX::XMVECTOR m_pickingVector;
+	int m_pickingMode = 1;					// Current cursor picking mode; 1 = objects; 2 = terrain sculpt; 3 = terrain paint.
+	PickingHandler m_pickingHandler;		// Handles our picking of objects/terrain
+
+	DisplayChunk* m_display_chunk;			// Will store reference to our renderer's DisplayChunk object
+
+	DirectX::SimpleMath::Matrix* m_world;						// Matrix references
+	DirectX::SimpleMath::Matrix* m_view;
+	DirectX::SimpleMath::Matrix* m_projection;
+	DirectX::SimpleMath::Vector3* m_cameraPosition;				// Reference to camera position vector
+	std::shared_ptr<DX::DeviceResources>	m_deviceResources;	// Reference to device resources
 };

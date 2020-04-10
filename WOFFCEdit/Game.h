@@ -55,12 +55,16 @@ public: // Members
 	void BuildDisplayChunk(ChunkObject *SceneChunk);
 	void SaveDisplayChunk(ChunkObject *SceneChunk);					// Saves geometry et al
 	//void ClearDisplayList();
+	DirectX::SimpleMath::Vector3 GetCameraPosition() { return m_camPosition; };
+	DirectX::SimpleMath::Matrix GetWorldMatrix() { return m_world; };
+	DirectX::SimpleMath::Matrix GetViewMatrix() { return m_view; };
+	DirectX::SimpleMath::Matrix GetProjectionMatrix() { return m_projection; };
+	DisplayChunk& GetDisplayChunk() { return m_displayChunk; };
+	std::shared_ptr<DX::DeviceResources>& GetDeviceResourcesRef() { return m_deviceResources; };
 
-	// Picking
-	void Pick(int& object_ID);
-	void Pick(bool b_editing_terrain);
-	// Mouse editing will edit the terrain if edit_toggle is true (m_toolInputCommands)
-	void UpdateSculptSettings();																
+	// Visual aid
+	void RenderRay(ID3D11DeviceContext* context);
+	void RenderBrush(ID3D11DeviceContext* context);
 
 #ifdef DXTK_AUDIO
 	void NewAudioDevice();
@@ -72,9 +76,6 @@ private: // Members
 	void Update(DX::StepTimer const& timer);
 	void UpdateInput();
 	void UpdateCamera();
-	// Picking ray
-	void RenderRay(ID3D11DeviceContext* context);
-	void RenderBrush(ID3D11DeviceContext* context);
 	//
 	void CreateDeviceDependentResources();
 	void CreateWindowSizeDependentResources();
@@ -83,9 +84,6 @@ private: // Members
 
 private: // Variables
 
-	// Brush origin point
-	DirectX::SimpleMath::Vector3 brush_origin;
-
 	// Mouse location on viewport and logging function for debugging etc.
 	int prevMouseX = 0;
 	int prevMouseY = 0;
@@ -93,22 +91,8 @@ private: // Variables
 	int DX_client_xDim;
 	int DX_client_yDim;
 
-	// Handles our object and terrain picking
-	PickingHandler picking_handler;
-	DirectX::SimpleMath::Ray picking_ray;
-
-	// Terrain manipulation
-	int	target_brush_var = 0;					// For targeting brush variables... 0 is size, 1 is intensity (see below)
-	float brush_size = 25.0f;					// 0 
-	float brush_intensity = 1.0f;				// 1
-
 	// Object selection
 	int selectedID = -1;
-
-	//
-	float _fov = 70.0f;
-	float _near = 0.01f;
-	float _far = 1000.0f;
 
 	// Tool specific
 	std::vector<DisplayObject>			m_displayList;

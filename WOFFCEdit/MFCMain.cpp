@@ -16,7 +16,8 @@ BEGIN_MESSAGE_MAP(MFCMain, CWinApp)
 	ON_COMMAND(ID_EDIT_RAY, &MFCMain::MenuEditRayVisualize)
 	// MODE
 	ON_COMMAND(ID_MODE_SELECT, &MFCMain::MenuModeSelect)
-	ON_COMMAND(ID_MODE_TERRAIN, &MFCMain::MenuModeTerrain)
+	ON_COMMAND(ID_MODE_TERRAIN_SCULPT, &MFCMain::MenuModeTerrainSculpt)
+	ON_COMMAND(ID_MODE_TERRAIN_PAINT, &MFCMain::MenuModeTerrainPaint)
 	
 	ON_UPDATE_COMMAND_UI(ID_INDICATOR_TOOL, &CMyFrame::OnUpdatePage)
 END_MESSAGE_MAP()
@@ -126,12 +127,17 @@ void MFCMain::MenuEditRayVisualize()
 
 void MFCMain::MenuModeSelect()
 {
-	m_ToolSystem.onActionChangeMode(0);
+	m_ToolSystem.onActionChangeMode(1);
 }
 
-void MFCMain::MenuModeTerrain()
+void MFCMain::MenuModeTerrainSculpt()
 {
-	m_ToolSystem.onActionChangeMode(1);
+	m_ToolSystem.onActionChangeMode(2);
+}
+
+void MFCMain::MenuModeTerrainPaint()
+{
+	m_ToolSystem.onActionChangeMode(3);
 }
 
 void MFCMain::ToolbarSaveButton()

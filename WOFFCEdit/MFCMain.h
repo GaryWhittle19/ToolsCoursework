@@ -37,7 +37,8 @@ private:
 	afx_msg void MenuEditWireframe();
 	afx_msg void MenuEditRayVisualize();
 	afx_msg void MenuModeSelect();
-	afx_msg void MenuModeTerrain();
+	afx_msg void MenuModeTerrainSculpt();
+	afx_msg void MenuModeTerrainPaint();
 	afx_msg	void ToolbarSaveButton();
 
 

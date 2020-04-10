@@ -189,11 +189,11 @@ void ToolMain::onActionLoad()
 	m_chunk.tex_splat_4_tiling = sqlite3_column_int(pResultsChunk, 18);
 
 
-	//Process REsults into renderable
+	// Process REsults into renderable
 	m_d3dRenderer.BuildDisplayList(&m_sceneGraph);
-	//build the renderable chunk 
+	// Build the renderable chunk and return a reference to the display chunk
 	m_d3dRenderer.BuildDisplayChunk(&m_chunk);
-
+	
 }
 
 void ToolMain::onActionSave()
@@ -293,7 +293,12 @@ void ToolMain::onActionSaveTerrain()
 void ToolMain::onActionChangeMode(int mode)
 {
 	m_pickingMode = mode;
-	m_toolInputCommands.edit_toggle = mode;
+	if (mode == 2 || mode == 3) {
+		m_toolInputCommands.edit_toggle = true;
+	}
+	else {
+		m_toolInputCommands.edit_toggle = false;
+	}
 }
 
 void ToolMain::onActionToggleWireframe()
@@ -308,6 +313,14 @@ void ToolMain::onActionToggleRayVisualization()
 
 void ToolMain::Tick(MSG *msg)
 {
+	// Get references to game variables and resources
+	m_world = &m_d3dRenderer.GetWorldMatrix();
+	m_view = &m_d3dRenderer.GetViewMatrix();
+	m_projection = &m_d3dRenderer.GetProjectionMatrix();
+	m_display_chunk = &m_d3dRenderer.GetDisplayChunk();
+	m_deviceResources = m_d3dRenderer.GetDeviceResourcesRef();
+	m_cameraPosition = &m_d3dRenderer.GetCameraPosition();
+	//Debug::Out(std::to_string(m_cameraPosition.x));
 	//do we have a selection
 	//do we have a mode
 	//are we clicking / dragging /releasing
@@ -318,21 +331,43 @@ void ToolMain::Tick(MSG *msg)
 
 	//Renderer Update Call
 	m_d3dRenderer.Tick(&m_toolInputCommands);
-	m_d3dRenderer.UpdateSculptSettings(); 
+	//m_d3dRenderer.UpdateSculptSettings(); 
+	DirectX::SimpleMath::Ray picking_ray;
+	DirectX::SimpleMath::Vector3 brush_center;
 
 	if (m_toolInputCommands.mouseLeft) {
-		if (m_pickingMode == 0) 
-		{
-			m_d3dRenderer.Pick(m_selectedObject);	// Object picking
+		switch (m_pickingMode) {
+		case 1:
+			
 			m_toolInputCommands.mouseLeft = false;
-		}
-		else if (m_pickingMode == 1)
-		{
-			m_d3dRenderer.Pick(true);				// Terrain manipulation
+			break;
+		case 2:
+			picking_ray = m_pickingHandler.PerformPicking(
+				m_deviceResources->GetScreenViewport().Width, m_deviceResources->GetScreenViewport().Height,
+				m_toolInputCommands.x, m_toolInputCommands.y, *m_world, *m_projection, *m_view,
+				m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth,
+				*m_display_chunk, *m_cameraPosition);
+
+			brush_center = m_display_chunk->GetBrushCenter(picking_ray);
+
+			m_display_chunk->GenerateHeightmap(10, 10, brush_center);
+			break;
+		case 3:
+			picking_ray = m_pickingHandler.PerformPicking(
+				m_deviceResources->GetScreenViewport().Width, m_deviceResources->GetScreenViewport().Height,
+				m_toolInputCommands.x, m_toolInputCommands.y, *m_world, *m_projection, *m_view,
+				m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth,
+				*m_display_chunk, *m_cameraPosition);
+
+			brush_center = m_display_chunk->GetBrushCenter(picking_ray);
+
+			m_display_chunk->PaintTerrain(10, 10, brush_center, DirectX::XMFLOAT4(DirectX::Colors::Red));
+			break;
 		}
 	}
-	if (m_pickingMode == 1 && !IsMoving()) {
-		m_d3dRenderer.Pick(false);					// Terrain brush visualization (only when stationary as performance heavy)
+	if (!IsMoving() && (m_pickingMode == 2 || m_pickingMode == 3)) {
+		//m_d3dRenderer.RenderBrush();
+		//m_d3dRenderer.RenderRay();
 	}
 }
 

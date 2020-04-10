@@ -25,9 +25,6 @@ public:
 		DirectX::SimpleMath::Matrix view,
 		float min_depth, float max_depth,
 		DisplayChunk& chunk, 
-		DirectX::SimpleMath::Vector3 campos,
-		int brush_size, int brush_intensity,
-		DirectX::SimpleMath::Vector3& originRef,
-		bool b_editing);		// Arguments for terrain
+		DirectX::SimpleMath::Vector3 campos);		// Arguments for terrain
 };
 

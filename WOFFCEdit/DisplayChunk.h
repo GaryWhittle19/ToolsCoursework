@@ -20,11 +20,18 @@ public:
 	void SaveHeightMap();			//saves the heigtmap back to file.
 	void UpdateTerrain();			//updates the geometry based on the heigtmap
 	void UpdateHeightmap();
-	void GenerateHeightmap(DirectX::SimpleMath::Ray PickingVector, float radius, float intensity, DirectX::SimpleMath::Vector3& originRef, bool b_editing); // creates or alters the heightmap
 
-	std::unique_ptr<DirectX::PrimitiveBatch<DirectX::VertexPositionNormalTexture>>  m_batch;
+
+	//
+	DirectX::SimpleMath::Vector3 GetBrushCenter(DirectX::SimpleMath::Ray PickingVector);
+	void GenerateHeightmap(float radius, float intensity, DirectX::SimpleMath::Vector3 center);
+	void PaintTerrain(float radius, float intensity, DirectX::SimpleMath::Vector3 center, DirectX::XMFLOAT4 color);
+
+	//
+	std::unique_ptr<DirectX::PrimitiveBatch<DirectX::VertexPositionNormalColorTexture>>  m_batch;
 	std::unique_ptr<DirectX::BasicEffect>       m_terrainEffect;
 
+	//
 	ID3D11ShaderResourceView *					m_texture_diffuse;				//diffuse texture
 	Microsoft::WRL::ComPtr<ID3D11InputLayout>   m_terrainInputLayout;
 
@@ -32,7 +39,8 @@ private:
 
 	// Terrain editing
 	
-	DirectX::VertexPositionNormalTexture m_terrainGeometry[TERRAINRESOLUTION][TERRAINRESOLUTION];
+	DirectX::VertexPositionNormalColorTexture m_terrainGeometry[TERRAINRESOLUTION][TERRAINRESOLUTION];
+	//DirectX::VertexPositionNormalTexture m_terrainGeometry[TERRAINRESOLUTION][TERRAINRESOLUTION];
 	BYTE m_heightMap[TERRAINRESOLUTION*TERRAINRESOLUTION];
 	void CalculateTerrainNormals();
 

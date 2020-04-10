@@ -52,7 +52,7 @@ void DisplayChunk::RenderBatch(std::shared_ptr<DX::DeviceResources>  DevResource
 	context->IASetInputLayout(m_terrainInputLayout.Get());
 
 	m_batch->Begin();
-	for (size_t i = 0; i < TERRAINRESOLUTION - 1; i++)		// Looping through QUADS.  so we subtrack one from the terrain array or it will try to draw a quad starting with the last vertex in each row. Which wont work
+	for (size_t i = 0; i < TERRAINRESOLUTION - 1; i++)		// Looping through QUADS.  so we subtract one from the terrain array or it will try to draw a quad starting with the last vertex in each row. Which wont work
 	{
 		for (size_t j = 0; j < TERRAINRESOLUTION - 1; j++)	// Same as above
 		{
@@ -76,7 +76,7 @@ void DisplayChunk::InitialiseBatch()
 			m_terrainGeometry[i][j].position = Vector3(j * m_terrainPositionScalingFactor - (0.5 * m_terrainSize), (float)(m_heightMap[index]) * m_terrainHeightScale, i * m_terrainPositionScalingFactor - (0.5 * m_terrainSize));	//This will create a terrain going from -64->64.  rather than 0->128.  So the center of the terrain is on the origin
 			m_terrainGeometry[i][j].normal = Vector3(0.0f, 1.0f, 0.0f);						//standard y =up
 			m_terrainGeometry[i][j].textureCoordinate = Vector2(((float)m_textureCoordStep * j) * m_tex_diffuse_tiling, ((float)m_textureCoordStep * i) * m_tex_diffuse_tiling);				//Spread tex coords so that its distributed evenly across the terrain from 0-1
-
+			m_terrainGeometry[i][j].color = XMFLOAT4(DirectX::Colors::White);
 		}
 	}
 	CalculateTerrainNormals();
@@ -108,8 +108,6 @@ void DisplayChunk::LoadHeightMap(std::shared_ptr<DX::DeviceResources>  DevResour
 
 	fclose(pFile);
 
-	//load in texture diffuse
-
 	//load the diffuse texture
 	std::wstring texturewstr = StringToWCHART(m_tex_diffuse_path);
 	HRESULT rs;
@@ -120,11 +118,11 @@ void DisplayChunk::LoadHeightMap(std::shared_ptr<DX::DeviceResources>  DevResour
 	m_terrainEffect->EnableDefaultLighting();
 	m_terrainEffect->SetLightingEnabled(true);
 	// Texture?
-	m_terrainEffect->SetTextureEnabled(true);
+	m_terrainEffect->SetTextureEnabled(false);
 	m_terrainEffect->SetTexture(m_texture_diffuse);
 	// Colour!
-	m_terrainEffect->SetDiffuseColor(DirectX::Colors::White);
-	
+	m_terrainEffect->SetVertexColorEnabled(true);
+
 
 	void const* shaderByteCode;
 	size_t byteCodeLength;
@@ -133,14 +131,14 @@ void DisplayChunk::LoadHeightMap(std::shared_ptr<DX::DeviceResources>  DevResour
 
 	//setup batch
 	DX::ThrowIfFailed(
-		device->CreateInputLayout(VertexPositionNormalTexture::InputElements,
-			VertexPositionNormalTexture::InputElementCount,
+		device->CreateInputLayout(VertexPositionNormalColorTexture::InputElements,
+			VertexPositionNormalColorTexture::InputElementCount,
 			shaderByteCode,
 			byteCodeLength,
 			m_terrainInputLayout.GetAddressOf())
-		);
+	);
 
-	m_batch = std::make_unique<PrimitiveBatch<VertexPositionNormalTexture>>(devicecontext);
+	m_batch = std::make_unique<PrimitiveBatch<VertexPositionNormalColorTexture>>(devicecontext);
 }
 
 
@@ -182,7 +180,7 @@ void DisplayChunk::UpdateTerrain()
 
 void DisplayChunk::UpdateHeightmap()
 {
-	//all this is doing is transferring the height from the heightmap into the terrain geometry.
+	//all this is doing is transferring the height from the terrain geometry into the heightmap.
 	int index;
 	for (size_t i = 0; i < TERRAINRESOLUTION; i++)
 	{
@@ -194,10 +192,11 @@ void DisplayChunk::UpdateHeightmap()
 	}
 }
 
-void DisplayChunk::GenerateHeightmap(DirectX::SimpleMath::Ray PickingVector, float radius, float intensity, DirectX::SimpleMath::Vector3& originRef, bool b_editing)
+DirectX::SimpleMath::Vector3 DisplayChunk::GetBrushCenter(DirectX::SimpleMath::Ray PickingVector)
 {
 	DirectX::SimpleMath::Vector3 v1, v2, v3, v4;			// Position vector veriables 
 	float distance = 10000.0f;								// Distance 
+	Vector3 center;											// Center of brush xyz
 
 	for (size_t i = 0; i < TERRAINRESOLUTION - 1; i++) {
 		for (int j = 0; j < TERRAINRESOLUTION - 1; j++)
@@ -211,36 +210,45 @@ void DisplayChunk::GenerateHeightmap(DirectX::SimpleMath::Ray PickingVector, flo
 			// Perform intersection test. 
 			if (PickingVector.Intersects(v1, v2, v3, distance) || PickingVector.Intersects(v1, v4, v3, distance)) {
 				if (m_terrainGeometry[i][j].position.y < PickingVector.position.y && m_terrainGeometry[i][j].position.y > PickingVector.direction.y * distance) {
-					Vector3 centre = Vector3(m_terrainGeometry[i][j].position + m_terrainGeometry[i + 1][j + 1].position) / 2;
-					originRef = Vector3(centre);
+					center = Vector3(m_terrainGeometry[i][j].position + m_terrainGeometry[i + 1][j + 1].position) / 2;
+				}
+			}
+		}
+	}
+	return center;
+}
 
-					// Only edit the terrain if b_editing is true
-					if (b_editing) {
-						for (size_t x = 0; x < TERRAINRESOLUTION - 1; x++)
-						{	// Loop through vertices again to do a distance check on the selected vertex. If within radius, expand based on mapped ranged value.
-								// Problems:
-									// Based on one vertice, so it's a little inaccurate considering the point of origin is technically off a little. 
-									// Expensive computationally. 
-							for (int y = 0; y < TERRAINRESOLUTION - 1; y++)
-							{
-								float proximity = DirectX::SimpleMath::Vector3::Distance(m_terrainGeometry[x][y].position, centre);
-								if (proximity < radius)
-								{
-									float mult = Toolbox::MappedClamp(proximity, 0.0f, radius, 1.0f, 0.0f);
+void DisplayChunk::GenerateHeightmap(float radius, float intensity, DirectX::SimpleMath::Vector3 center)
+{
+	for (size_t x = 0; x < TERRAINRESOLUTION - 1; x++)
+	{	// Loop through vertices again to do a distance check on the selected vertex. If within radius, expand based on mapped ranged value.		
+		for (int y = 0; y < TERRAINRESOLUTION - 1; y++)
+		{
+			float proximity = DirectX::SimpleMath::Vector3::Distance(m_terrainGeometry[x][y].position, center);
+			if (proximity < radius)
+			{
+				// Calculate multiplier based on vertex distance from center (0.0f being center)
+				float mult = Toolbox::MappedClamp(proximity, 0.0f, radius, 1.0f, 0.0f);
+				// Perform the edit
+				m_terrainGeometry[x][y].position.y += intensity * mult;
+			}
+		}
+	}
+}
 
-									// Perform the edit
-									m_terrainGeometry[x][y].position.y += intensity * mult;
-								} // End conditional - if within radius
-
-							} // End looping through y's for this terrain x
-						} // End looping through x's for terrain
-
-					} // End conditional - if editing terrain
-				} // End conditional - height check to constrain editing to above terrain
-			} // End conditional - intersection check of picking vector
-
-		} // End for looping through j's for this terrain i
-	} // End looping through i's for terrain
+void DisplayChunk::PaintTerrain(float radius, float intensity, DirectX::SimpleMath::Vector3 center, XMFLOAT4 color)
+{
+	for (size_t x = 0; x < TERRAINRESOLUTION - 1; x++)
+	{	// Loop through vertices again to do a distance check on the selected vertex. If within radius, paint terrain.
+		for (int y = 0; y < TERRAINRESOLUTION - 1; y++)
+		{
+			float proximity = DirectX::SimpleMath::Vector3::Distance(m_terrainGeometry[x][y].position, center);
+			if (proximity < radius)
+			{
+				m_terrainGeometry[x][y].color = color;
+			}
+		}
+	} 
 }
 
 void DisplayChunk::CalculateTerrainNormals()
