@@ -2,8 +2,6 @@
 #include "resource.h"
 #include <vector>
 #include <sstream>
-#include "Debug.h"
-#include "Toolbox.h"
 
 //
 //ToolMain Class
@@ -15,26 +13,26 @@ ToolMain::ToolMain()
 	m_databaseConnection = NULL;
 
 	// Zero the input commands
-	m_toolInputCommands.forward				= false;
-	m_toolInputCommands.back				= false;
-	m_toolInputCommands.left				= false;
-	m_toolInputCommands.right				= false;
-	m_toolInputCommands.up					= false;
-	m_toolInputCommands.down				= false;
+	m_toolInputCommands.forward = false;
+	m_toolInputCommands.back = false;
+	m_toolInputCommands.left = false;
+	m_toolInputCommands.right = false;
+	m_toolInputCommands.up = false;
+	m_toolInputCommands.down = false;
 	//
-	m_toolInputCommands.mouseLeft			= false;
-	m_toolInputCommands.mouseRight			= false;
+	m_toolInputCommands.mouseLeft = false;
+	m_toolInputCommands.mouseRight = false;
 	//
-	m_toolInputCommands.sprint				= false;
-	m_toolInputCommands.wireframe_toggle	= false;
-	m_toolInputCommands.ray_toggle			= false;
+	m_toolInputCommands.sprint = false;
+	m_toolInputCommands.wireframe_toggle = false;
+	m_toolInputCommands.ray_visualize = false;
 	//
-	m_toolInputCommands.brush_control_int	= 0;
-	m_toolInputCommands.decrease			= false;
-	m_toolInputCommands.increase			= false;
+	m_toolInputCommands.brush_control_int = 0;
+	m_toolInputCommands.decrease = false;
+	m_toolInputCommands.increase = false;
 	//
-	m_toolInputCommands.x					= 0;
-	m_toolInputCommands.y					= 0;
+	m_toolInputCommands.x = 0;
+	m_toolInputCommands.y = 0;
 }
 
 ToolMain::~ToolMain()
@@ -50,21 +48,25 @@ int ToolMain::getCurrentSelectionID()
 void ToolMain::onActionInitialise(HWND handle, int width, int height)
 {
 	//window size, handle etc for directX
-	m_width		= width;
-	m_height	= height;
-	
+	m_width = width;
+	m_height = height;
+
 	m_d3dRenderer.Initialize(handle, m_width, m_height);
+	// Create references to display chunk object and DirectX device resources for later use 
+	m_displayList = &m_d3dRenderer.GetDisplayList();
+	m_display_chunk = &m_d3dRenderer.GetDisplayChunk();
+	m_deviceResources = m_d3dRenderer.GetDeviceResourcesRef();
 
 	//database connection establish
 	int rc;
-	rc = sqlite3_open_v2("database/test.db",&m_databaseConnection, SQLITE_OPEN_READWRITE, NULL);
+	rc = sqlite3_open_v2("database/test.db", &m_databaseConnection, SQLITE_OPEN_READWRITE, NULL);
 
-	if (rc) 
+	if (rc)
 	{
 		TRACE("Can't open database");
 		//if the database cant open. Perhaps a more catastrophic error would be better here
 	}
-	else 
+	else
 	{
 		TRACE("Opened database successfully");
 	}
@@ -82,24 +84,24 @@ void ToolMain::onActionLoad()
 
 	//SQL
 	int rc;
-	char *sqlCommand;
-	char *ErrMSG = 0;
-	sqlite3_stmt *pResults;								//results of the query
-	sqlite3_stmt *pResultsChunk;
+	char* sqlCommand;
+	char* ErrMSG = 0;
+	sqlite3_stmt* pResults;								//results of the query
+	sqlite3_stmt* pResultsChunk;
 
 	//OBJECTS IN THE WORLD
 	//prepare SQL Text
 	sqlCommand = "SELECT * from Objects";				//sql command which will return all records from the objects table.
 	//Send Command and fill result object
-	rc = sqlite3_prepare_v2(m_databaseConnection, sqlCommand, -1, &pResults, 0 );
-	
+	rc = sqlite3_prepare_v2(m_databaseConnection, sqlCommand, -1, &pResults, 0);
+
 	//loop for each row in results until there are no more rows.  ie for every row in the results. We create and object
 	while (sqlite3_step(pResults) == SQLITE_ROW)
-	{	
+	{
 		SceneObject newSceneObject;
 		newSceneObject.ID = sqlite3_column_int(pResults, 0);
 		newSceneObject.chunk_ID = sqlite3_column_int(pResults, 1);
-		newSceneObject.model_path		= reinterpret_cast<const char*>(sqlite3_column_text(pResults, 2));
+		newSceneObject.model_path = reinterpret_cast<const char*>(sqlite3_column_text(pResults, 2));
 		newSceneObject.tex_diffuse_path = reinterpret_cast<const char*>(sqlite3_column_text(pResults, 3));
 		newSceneObject.posX = sqlite3_column_double(pResults, 4);
 		newSceneObject.posY = sqlite3_column_double(pResults, 5);
@@ -154,7 +156,7 @@ void ToolMain::onActionLoad()
 		newSceneObject.light_constant = sqlite3_column_double(pResults, 53);
 		newSceneObject.light_linear = sqlite3_column_double(pResults, 54);
 		newSceneObject.light_quadratic = sqlite3_column_double(pResults, 55);
-	
+
 
 		//send completed object to scenegraph
 		m_sceneGraph.push_back(newSceneObject);
@@ -193,17 +195,16 @@ void ToolMain::onActionLoad()
 	m_d3dRenderer.BuildDisplayList(&m_sceneGraph);
 	// Build the renderable chunk and return a reference to the display chunk
 	m_d3dRenderer.BuildDisplayChunk(&m_chunk);
-	
 }
 
 void ToolMain::onActionSave()
 {
 	//SQL
 	int rc;
-	char *sqlCommand;
-	char *ErrMSG = 0;
-	sqlite3_stmt *pResults;								//results of the query
-	
+	char* sqlCommand;
+	char* ErrMSG = 0;
+	sqlite3_stmt* pResults;								//results of the query
+
 
 	//OBJECTS IN THE WORLD Delete them all
 	//prepare SQL Text
@@ -218,10 +219,10 @@ void ToolMain::onActionSave()
 	for (int i = 0; i < numObjects; i++)
 	{
 		std::stringstream command;
-		command << "INSERT INTO Objects " 
-			<<"VALUES(" << m_sceneGraph.at(i).ID << ","
-			<< m_sceneGraph.at(i).chunk_ID  << ","
-			<< "'" << m_sceneGraph.at(i).model_path <<"'" << ","
+		command << "INSERT INTO Objects "
+			<< "VALUES(" << m_sceneGraph.at(i).ID << ","
+			<< m_sceneGraph.at(i).chunk_ID << ","
+			<< "'" << m_sceneGraph.at(i).model_path << "'" << ","
 			<< "'" << m_sceneGraph.at(i).tex_diffuse_path << "'" << ","
 			<< m_sceneGraph.at(i).posX << ","
 			<< m_sceneGraph.at(i).posY << ","
@@ -280,7 +281,7 @@ void ToolMain::onActionSave()
 			<< ")";
 		std::string sqlCommand2 = command.str();
 		rc = sqlite3_prepare_v2(m_databaseConnection, sqlCommand2.c_str(), -1, &pResults, 0);
-		sqlite3_step(pResults);	
+		sqlite3_step(pResults);
 	}
 	MessageBox(NULL, L"Objects Saved", L"Notification", MB_OK);
 }
@@ -294,10 +295,10 @@ void ToolMain::onActionChangeMode(int mode)
 {
 	m_pickingMode = mode;
 	if (mode == 2 || mode == 3) {
-		m_toolInputCommands.edit_toggle = true;
+		m_toolInputCommands.brush_visualize = true;
 	}
 	else {
-		m_toolInputCommands.edit_toggle = false;
+		m_toolInputCommands.brush_visualize = false;
 	}
 }
 
@@ -308,19 +309,11 @@ void ToolMain::onActionToggleWireframe()
 
 void ToolMain::onActionToggleRayVisualization()
 {
-	m_toolInputCommands.ray_toggle = !m_toolInputCommands.ray_toggle;
+	m_toolInputCommands.ray_visualize = !m_toolInputCommands.ray_visualize;
 }
 
-void ToolMain::Tick(MSG *msg)
+void ToolMain::Tick(MSG* msg)
 {
-	// Get references to game variables and resources
-	m_world = &m_d3dRenderer.GetWorldMatrix();
-	m_view = &m_d3dRenderer.GetViewMatrix();
-	m_projection = &m_d3dRenderer.GetProjectionMatrix();
-	m_display_chunk = &m_d3dRenderer.GetDisplayChunk();
-	m_deviceResources = m_d3dRenderer.GetDeviceResourcesRef();
-	m_cameraPosition = &m_d3dRenderer.GetCameraPosition();
-	//Debug::Out(std::to_string(m_cameraPosition.x));
 	//do we have a selection
 	//do we have a mode
 	//are we clicking / dragging /releasing
@@ -331,54 +324,120 @@ void ToolMain::Tick(MSG *msg)
 
 	//Renderer Update Call
 	m_d3dRenderer.Tick(&m_toolInputCommands);
-	//m_d3dRenderer.UpdateSculptSettings(); 
+	UpdatePicking();
+	UpdateSculptSettings();
+}
+
+void ToolMain::UpdatePicking()
+{
+	// Get references to game variables and resources
+	m_cameraPosition = m_d3dRenderer.GetCameraPosition();
+	m_world = m_d3dRenderer.GetWorldMatrix();
+	m_view = m_d3dRenderer.GetViewMatrix();
+	m_projection = m_d3dRenderer.GetProjectionMatrix();
+	// Set up the ray and brush center vector
 	DirectX::SimpleMath::Ray picking_ray;
 	DirectX::SimpleMath::Vector3 brush_center;
 
 	if (m_toolInputCommands.mouseLeft) {
 		switch (m_pickingMode) {
-		case 1:
-			
+
+		case 1:	// Object picking
+
+				// Get picking ray for object
+			picking_ray = m_pickingHandler.PerformPicking(
+				m_deviceResources->GetScreenViewport().Width, m_deviceResources->GetScreenViewport().Height,
+				m_toolInputCommands.x, m_toolInputCommands.y, m_world, m_projection, m_view,
+				m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_selectedObject,
+				*m_displayList, m_cameraPosition);
+			// Set mouseleft back up to perform a *click*
 			m_toolInputCommands.mouseLeft = false;
+
+			// If ray is being visualized
+			if (m_toolInputCommands.ray_visualize)
+				m_d3dRenderer.SetRayForVisualization(picking_ray);
 			break;
-		case 2:
+
+		case 2:	// Terrain sculpting
+
+				// Get picking ray for terrain
 			picking_ray = m_pickingHandler.PerformPicking(
 				m_deviceResources->GetScreenViewport().Width, m_deviceResources->GetScreenViewport().Height,
-				m_toolInputCommands.x, m_toolInputCommands.y, *m_world, *m_projection, *m_view,
+				m_toolInputCommands.x, m_toolInputCommands.y, m_world, m_projection, m_view,
 				m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth,
-				*m_display_chunk, *m_cameraPosition);
-
+				*m_display_chunk, m_cameraPosition);
+			// Get brush center
 			brush_center = m_display_chunk->GetBrushCenter(picking_ray);
 
-			m_display_chunk->GenerateHeightmap(10, 10, brush_center);
+			// Perform terrain painting
+			m_display_chunk->GenerateHeightmap(brush_size, brush_intensity, brush_center);
+
+			// Visualize brush if required
+			if (m_toolInputCommands.brush_visualize)
+				m_d3dRenderer.SetBrushForVisualization(brush_center, brush_size);
+			// Visualize ray if required
+			if (m_toolInputCommands.ray_visualize)
+				m_d3dRenderer.SetRayForVisualization(picking_ray);
 			break;
-		case 3:
+
+		case 3:	// Terrain painting
+
+				// Get picking ray for terrain
 			picking_ray = m_pickingHandler.PerformPicking(
 				m_deviceResources->GetScreenViewport().Width, m_deviceResources->GetScreenViewport().Height,
-				m_toolInputCommands.x, m_toolInputCommands.y, *m_world, *m_projection, *m_view,
+				m_toolInputCommands.x, m_toolInputCommands.y, m_world, m_projection, m_view,
 				m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth,
-				*m_display_chunk, *m_cameraPosition);
-
+				*m_display_chunk, m_cameraPosition);
+			// Get brush center
 			brush_center = m_display_chunk->GetBrushCenter(picking_ray);
 
-			m_display_chunk->PaintTerrain(10, 10, brush_center, DirectX::XMFLOAT4(DirectX::Colors::Red));
+			// Perform terrain painting
+			m_display_chunk->PaintTerrain(brush_size, brush_intensity, brush_center, DirectX::XMFLOAT4(DirectX::Colors::Red));
+
+			// Visualize brush if required
+			if (m_toolInputCommands.brush_visualize)
+				m_d3dRenderer.SetBrushForVisualization(brush_center, brush_size);
+			// Visualize ray if required
+			if (m_toolInputCommands.ray_visualize)
+				m_d3dRenderer.SetRayForVisualization(picking_ray);
 			break;
+
 		}
 	}
-	if (!IsMoving() && (m_pickingMode == 2 || m_pickingMode == 3)) {
-		//m_d3dRenderer.RenderBrush();
-		//m_d3dRenderer.RenderRay();
+
+	// If terrain sculpting/painting without left click held, visualize the brush but only when camera is stationary to make performance hit more bearable
+	if (m_toolInputCommands.brush_visualize && (m_pickingMode == 2 || m_pickingMode == 3) && !IsCameraMoving()) {
+		// Get picking ray for terrain
+		picking_ray = m_pickingHandler.PerformPicking(
+			m_deviceResources->GetScreenViewport().Width, m_deviceResources->GetScreenViewport().Height,
+			m_toolInputCommands.x, m_toolInputCommands.y, m_world, m_projection, m_view,
+			m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth,
+			*m_display_chunk, m_cameraPosition);
+		// Get brush center
+		brush_center = m_display_chunk->GetBrushCenter(picking_ray);
+		// Set the brush variables for visualization in game
+		m_d3dRenderer.SetBrushForVisualization(brush_center, brush_size);
 	}
 }
 
-void ToolMain::UpdateInput(MSG * msg)
+bool ToolMain::IsCameraMoving() {
+	return (
+		m_toolInputCommands.forward ||
+		m_toolInputCommands.left ||
+		m_toolInputCommands.back ||
+		m_toolInputCommands.right ||
+		m_toolInputCommands.up ||
+		m_toolInputCommands.down);
+}
+
+void ToolMain::UpdateInput(MSG* msg)
 {
 	m_toolInputProcessor.ResetKeys();
 	bool wasDown, isDown;
 	// Message handling
 	switch (msg->message)
 	{
-	// Global inputs - mouse position/buttons and keyboard
+		// Global inputs - mouse position/buttons and keyboard
 	case WM_KEYDOWN:
 		wasDown = ((msg->lParam & (1 << 30)) != 0);
 		isDown = ((msg->lParam & (1 << 31)) == 0);
@@ -399,7 +458,7 @@ void ToolMain::UpdateInput(MSG * msg)
 		m_toolInputCommands.mouseLeft = true;
 		break;
 
-	case WM_LBUTTONUP:	
+	case WM_LBUTTONUP:
 		m_toolInputCommands.mouseLeft = false;
 		break;
 
@@ -450,12 +509,31 @@ void ToolMain::UpdateInput(MSG * msg)
 	}
 }
 
-bool ToolMain::IsMoving() {
-	return (
-		m_toolInputCommands.forward ||
-		m_toolInputCommands.left	||
-		m_toolInputCommands.back	||
-		m_toolInputCommands.right	||
-		m_toolInputCommands.up		||
-		m_toolInputCommands.down);
+void ToolMain::UpdateSculptSettings()
+{
+	switch (m_toolInputCommands.brush_control_int) {
+	case 0:
+		if (m_toolInputCommands.decrease)
+		{
+			brush_size -= 0.333f;
+		}
+		if (m_toolInputCommands.increase)
+		{
+			brush_size += 0.333f;
+		}
+		brush_size = Toolbox::Clamp(brush_size, 1.0f, 200.0f);
+		break;
+
+	case 1:
+		if (m_toolInputCommands.decrease)
+		{
+			brush_intensity -= 0.025f;
+		}
+		if (m_toolInputCommands.increase)
+		{
+			brush_intensity += 0.025f;
+		}
+		brush_intensity = Toolbox::Clamp(brush_intensity, -2.0f, 2.0f);
+		break;
+	}
 }

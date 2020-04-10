@@ -4,17 +4,17 @@
 
 #pragma once
 
-#include "DebugDraw.h"
-#include "SimpleMath.h"
-#include "DeviceResources.h"
-#include "StepTimer.h"
-#include "SceneObject.h"
-#include "DisplayObject.h"
-#include "DisplayChunk.h"
 #include "ChunkObject.h"
+#include "Debug.h"
+#include "DebugDraw.h"
+#include "DeviceResources.h"
+#include "DisplayChunk.h"
+#include "DisplayObject.h"
 #include "InputCommands.h"
 #include "Picking.h"
-#include "Debug.h"
+#include "SceneObject.h"
+#include "SimpleMath.h"
+#include "StepTimer.h"
 #include "Toolbox.h"
 #include <vector>
 
@@ -50,21 +50,25 @@ public: // Members
 	void OnResuming();
 	void OnWindowSizeChanged(int width, int height);
 
-	// Tool specific
+	// TOOL SPECIFIC ------------------------------
 	void BuildDisplayList(std::vector<SceneObject>* SceneGraph);	// Note vector passed by reference 
 	void BuildDisplayChunk(ChunkObject *SceneChunk);
 	void SaveDisplayChunk(ChunkObject *SceneChunk);					// Saves geometry et al
 	//void ClearDisplayList();
+	// Getters for relevant variables and resources
 	DirectX::SimpleMath::Vector3 GetCameraPosition() { return m_camPosition; };
 	DirectX::SimpleMath::Matrix GetWorldMatrix() { return m_world; };
 	DirectX::SimpleMath::Matrix GetViewMatrix() { return m_view; };
 	DirectX::SimpleMath::Matrix GetProjectionMatrix() { return m_projection; };
+	std::vector<DisplayObject>& GetDisplayList() { return m_displayList; };
 	DisplayChunk& GetDisplayChunk() { return m_displayChunk; };
 	std::shared_ptr<DX::DeviceResources>& GetDeviceResourcesRef() { return m_deviceResources; };
-
+	void SetRayForVisualization(DirectX::SimpleMath::Ray ray) { picking_ray = ray; };
+	void SetBrushForVisualization(DirectX::SimpleMath::Vector3 center, float radius) { brush_center = center; brush_radius = radius; };
 	// Visual aid
 	void RenderRay(ID3D11DeviceContext* context);
 	void RenderBrush(ID3D11DeviceContext* context);
+	// TOOL SPECIFIC ------------------------------ // END
 
 #ifdef DXTK_AUDIO
 	void NewAudioDevice();
@@ -84,33 +88,32 @@ private: // Members
 
 private: // Variables
 
+
+	// TOOL SPECIFIC ------------------------------
 	// Mouse location on viewport and logging function for debugging etc.
 	int prevMouseX = 0;
 	int prevMouseY = 0;
-	// DirectX Client Size
-	int DX_client_xDim;
-	int DX_client_yDim;
-
-	// Object selection
-	int selectedID = -1;
-
-	// Tool specific
-	std::vector<DisplayObject>			m_displayList;
-	DisplayChunk						m_displayChunk;
 	InputCommands						m_InputCommands;
-
 	// Functionality
 	float								m_movespeed;
-
 	// Camera
 	DirectX::SimpleMath::Vector3		m_camPosition;
 	DirectX::SimpleMath::Vector3		m_camOrientation;
 	DirectX::SimpleMath::Vector3		m_camLookAt;
 	DirectX::SimpleMath::Vector3		m_camLookDirection;
 	DirectX::SimpleMath::Vector3		m_camRight;
-	
 	// Control variables
 	bool m_grid;							//grid rendering on / off
+	// Visualization
+	DirectX::SimpleMath::Ray picking_ray;
+	DirectX::SimpleMath::Vector3 brush_center; 
+	float brush_radius;
+	// TOOL SPECIFIC ------------------------------ // END
+
+	// Objects and chunk
+	std::vector<DisplayObject>			m_displayList;
+	DisplayChunk						m_displayChunk;
+
 	// Device resources.
     std::shared_ptr<DX::DeviceResources>    m_deviceResources;
 

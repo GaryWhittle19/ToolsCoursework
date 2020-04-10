@@ -26,9 +26,9 @@ struct InputCommands
 	// Editor functionality 
 	bool sprint;
 	bool wireframe_toggle;
-	bool ray_toggle;
+	bool ray_visualize;
 
-	bool edit_toggle;
+	bool brush_visualize;
 	int brush_control_int;
 	bool decrease;
 	bool increase;
