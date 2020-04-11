@@ -62,11 +62,14 @@
     <ClCompile Include="SelectDialogue.cpp">
       <Filter>MFC</Filter>
     </ClCompile>
-    <ClCompile Include="Picking.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
     <ClCompile Include="DebugDraw.cpp">
       <Filter>Convenience</Filter>
+    </ClCompile>
+    <ClCompile Include="Camera.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Picking.cpp">
+      <Filter>Tool</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -101,9 +104,6 @@
     <ClInclude Include="DisplayObject.h">
       <Filter>Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="InputCommands.h">
-      <Filter>Tool</Filter>
-    </ClInclude>
     <ClInclude Include="MFCFrame.h">
       <Filter>MFC</Filter>
     </ClInclude>
@@ -117,17 +117,20 @@
     <ClInclude Include="SelectDialogue.h">
       <Filter>MFC</Filter>
     </ClInclude>
-    <ClInclude Include="Picking.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
     <ClInclude Include="Toolbox.h">
       <Filter>Convenience</Filter>
     </ClInclude>
     <ClInclude Include="DebugDraw.h">
       <Filter>Convenience</Filter>
     </ClInclude>
-    <ClInclude Include="Debug.h">
-      <Filter>Convenience</Filter>
+    <ClInclude Include="Camera.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Picking.h">
+      <Filter>Tool</Filter>
+    </ClInclude>
+    <ClInclude Include="InputCommands.h">
+      <Filter>Tool</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

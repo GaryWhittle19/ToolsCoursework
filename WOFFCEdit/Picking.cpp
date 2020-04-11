@@ -8,7 +8,7 @@
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
-DirectX::SimpleMath::Ray PickingHandler::PerformPicking(
+DirectX::SimpleMath::Ray PickingHandler::PerformObjectPicking(
 	int window_x, int window_y,
 	int mouse_x, int mouse_y,
 	DirectX::SimpleMath::Matrix world,
@@ -82,7 +82,7 @@ DirectX::SimpleMath::Ray PickingHandler::PerformPicking(
 	return PickingRay;
 }
 
-DirectX::SimpleMath::Ray PickingHandler::PerformPicking(
+DirectX::SimpleMath::Ray PickingHandler::PerformTerrainPicking(
 	int window_x, int window_y,
 	int mouse_x, int mouse_y,
 	DirectX::SimpleMath::Matrix world,

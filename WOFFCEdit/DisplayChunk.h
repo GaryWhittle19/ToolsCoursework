@@ -23,7 +23,7 @@ public:
 
 
 	//
-	DirectX::SimpleMath::Vector3 GetBrushCenter(DirectX::SimpleMath::Ray PickingVector);
+	DirectX::SimpleMath::Vector3 GetBrushCenter(DirectX::SimpleMath::Ray PickingVector, bool* DidHit);
 	void GenerateHeightmap(float radius, float intensity, DirectX::SimpleMath::Vector3 center);
 	void PaintTerrain(float radius, float intensity, DirectX::SimpleMath::Vector3 center, DirectX::XMFLOAT4 color);
 

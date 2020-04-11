@@ -2,7 +2,6 @@
 
 #include "DisplayChunk.h"
 #include "Game.h"
-#include "Debug.h"
 #include "Toolbox.h"
 
 using namespace DirectX;
@@ -192,7 +191,7 @@ void DisplayChunk::UpdateHeightmap()
 	}
 }
 
-DirectX::SimpleMath::Vector3 DisplayChunk::GetBrushCenter(DirectX::SimpleMath::Ray PickingVector)
+DirectX::SimpleMath::Vector3 DisplayChunk::GetBrushCenter(DirectX::SimpleMath::Ray PickingVector, bool* DidHit)
 {
 	DirectX::SimpleMath::Vector3 v1, v2, v3, v4;			// Position vector veriables 
 	float distance = 10000.0f;								// Distance 
@@ -211,6 +210,7 @@ DirectX::SimpleMath::Vector3 DisplayChunk::GetBrushCenter(DirectX::SimpleMath::R
 			if (PickingVector.Intersects(v1, v2, v3, distance) || PickingVector.Intersects(v1, v4, v3, distance)) {
 				if (m_terrainGeometry[i][j].position.y < PickingVector.position.y && m_terrainGeometry[i][j].position.y > PickingVector.direction.y * distance) {
 					center = Vector3(m_terrainGeometry[i][j].position + m_terrainGeometry[i + 1][j + 1].position) / 2;
+					*DidHit = true;
 				}
 			}
 		}

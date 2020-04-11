@@ -23,26 +23,6 @@ Game::Game()
 	// Initial Settings
 	// Modes
 	m_grid = false;
-
-	// Functional
-	m_movespeed = 0.30;
-
-	// Camera
-	m_camPosition.x = 0.0f;
-	m_camPosition.y = 0.0f;
-	m_camPosition.z = 0.0f;
-	m_camOrientation.x = 0;
-	m_camOrientation.y = 0;
-	m_camOrientation.z = 0;
-	m_camLookAt.x = 0.0f;
-	m_camLookAt.y = 0.0f;
-	m_camLookAt.z = 0.0f;
-	m_camLookDirection.x = 0.0f;
-	m_camLookDirection.y = 0.0f;
-	m_camLookDirection.z = 0.0f;
-	m_camRight.x = 0.0f;
-	m_camRight.y = 0.0f;
-	m_camRight.z = 0.0f;
 }
 
 Game::~Game()
@@ -113,7 +93,7 @@ void Game::SetGridState(bool state)
 void Game::Tick(InputCommands* Input)
 {
 	// Copy over the input commands so we have a local version to use elsewhere.
-	m_InputCommands = *Input;
+	m_ToolInputCommands = *Input;
 	m_timer.Tick([&]()
 		{
 			Update(m_timer);
@@ -135,8 +115,14 @@ void Game::Tick(InputCommands* Input)
 // Updates the world.
 void Game::Update(DX::StepTimer const& timer)
 {
-	UpdateCamera();
-	UpdateInput();
+	// UpdateInput(); // No game input yet
+	if (m_ToolCamera) {
+		m_view = m_ToolCamera->GetCameraViewMatrix();
+	}
+
+	if (m_PlayerCamera) {
+		m_view = m_PlayerCamera->GetCameraViewMatrix();
+	}
 	
 	m_batchEffect->SetView(m_view);
 	m_batchEffect->SetWorld(Matrix::Identity);
@@ -171,58 +157,7 @@ void Game::Update(DX::StepTimer const& timer)
 
 void Game::UpdateInput()
 {
-	// Process input and update stuff
-	// Sprint
-	if (m_InputCommands.sprint) { m_movespeed = 0.90; }
-	else m_movespeed = 0.30;
-	// Movement
-	if (m_InputCommands.forward) { m_camPosition += m_camLookDirection * m_movespeed; }
-	if (m_InputCommands.back) { m_camPosition -= m_camLookDirection * m_movespeed; }
-	if (m_InputCommands.right) { m_camPosition += m_camRight * m_movespeed; }
-	if (m_InputCommands.left) { m_camPosition -= m_camRight * m_movespeed; }
-	if (m_InputCommands.up) { m_camPosition.y += m_movespeed; }
-	if (m_InputCommands.down) { m_camPosition.y -= m_movespeed; }
-}
 
-void Game::UpdateCamera()
-{
-	// Camera motion is on a plane so kill the other seven deadly dimensions
-	Vector3 planarMotionVector = m_camLookDirection;
-	planarMotionVector.y = 0.0;
-
-	// Update and log mouse coords and delta 
-	int dx = m_InputCommands.x - prevMouseX;
-	int dy = m_InputCommands.y - prevMouseY;
-	prevMouseX = m_InputCommands.x;
-	prevMouseY = m_InputCommands.y;
-
-	// Some less annoying camera controls
-	if (m_InputCommands.mouseRight) {
-		if (dx != 0 || dy != 0) {
-			m_camOrientation.y += dx;
-			m_camOrientation.x -= dy;
-		}
-	}
-
-	// Clamp camera pitch within reasonable values
-	m_camOrientation.x = Toolbox::Clamp(m_camOrientation.x, -85.0f, 85.0f);
-
-	// Create look direction from Euler angles in m_camOrientation
-	float phi = (m_camOrientation.x) * 3.1415 / 180;
-	float theta = (m_camOrientation.y) * 3.1415 / 180;
-	m_camLookDirection.x = cos(theta) * cos(phi);
-	m_camLookDirection.y = sin(phi);
-	m_camLookDirection.z = sin(theta) * cos(phi);
-	m_camLookDirection.Normalize();
-
-	// Create right vector from look Direction
-	m_camLookDirection.Cross(Vector3::UnitY, m_camRight);
-
-	// Update lookat point
-	m_camLookAt = m_camPosition + m_camLookDirection;
-
-	// Apply camera vectors
-	m_view = Matrix::CreateLookAt(m_camPosition, m_camLookAt, Vector3::UnitY);
 }
 
 #pragma endregion
@@ -244,27 +179,32 @@ void Game::Render()
 
 	m_deviceResources->PIXBeginEvent(L"Render");
 	
-
 	auto context = m_deviceResources->GetD3DDeviceContext();
 
 
 
-	if (m_grid)
-	{
-		// Draw procedurally generated dynamic grid
-		const XMVECTORF32 xaxis = { 512.f, 0.f, 0.f };
-		const XMVECTORF32 yaxis = { 0.f, 0.f, 512.f };
-		DrawGrid(xaxis, yaxis, g_XMZero, 512, 512, Colors::Gray);
+	// Editor specific rendering steps - player camera won't see any of this
+	if (m_ToolCamera) {
+		// Render visual aids if their respective booleans are true
+		if (m_ToolInputCommands.ray_visualize)
+		{
+			RenderRay(context);
+		}
+		if (m_ToolInputCommands.brush_visualize)
+		{
+			RenderBrush(context);
+		}
+		if (m_grid)
+		{
+			const XMVECTORF32 xaxis = { 512.f, 0.f, 0.f };
+			const XMVECTORF32 yaxis = { 0.f, 0.f, 512.f };
+			DrawGrid(xaxis, yaxis, g_XMZero, 512, 512, Colors::Gray);
+		}
 	}
 
-	//CAMERA POSITION ON HUD
-	m_sprites->Begin();
-	WCHAR   Buffer[256];
-	std::wstring var = L"Cam X: " + std::to_wstring(m_camPosition.x) + L"Cam Z: " + std::to_wstring(m_camPosition.z);
-	m_font->DrawString(m_sprites.get(), var.c_str(), XMFLOAT2(100, 10), Colors::Yellow);
-	m_sprites->End();
 
-	//RENDER OBJECTS FROM SCENEGRAPH
+
+	// Render objects from the scenegraph
 	int numRenderObjects = m_displayList.size();
 	for (int i = 0; i < numRenderObjects; i++)
 	{
@@ -285,24 +225,27 @@ void Game::Render()
 	}
 	m_deviceResources->PIXEndEvent();
 
-	//RENDER TERRAIN
+	// Render the terrain
 	context->OMSetBlendState(m_states->Opaque(), nullptr, 0xFFFFFFFF);
 	context->OMSetDepthStencilState(m_states->DepthDefault(), 0);
 	context->RSSetState(m_states->CullNone());
-	if (m_InputCommands.wireframe_toggle) { context->RSSetState(m_states->Wireframe()); };
+	if (m_ToolInputCommands.wireframe_toggle) { context->RSSetState(m_states->Wireframe()); };
 
 	// Render the batch,  This is handled in the Display chunk becuase it has the potential to get complex
 	m_displayChunk.RenderBatch(m_deviceResources);
 
-	// Render ray if the rendering bool is true
-	if (m_InputCommands.ray_visualize) 
-	{
-		RenderRay(context);
+
+
+	// Editor specific rendering steps - player camera won't see any of this
+	if (m_ToolCamera) {
+		m_sprites->Begin();
+		WCHAR   Buffer[256];
+		std::wstring var = L"Cam X: " + std::to_wstring(m_ToolCamera->GetCameraPosition().x) + L"Cam Z: " + std::to_wstring(m_ToolCamera->GetCameraPosition().z);
+		m_font->DrawString(m_sprites.get(), var.c_str(), XMFLOAT2(100, 10), Colors::Red);
+		m_sprites->End();
 	}
-	if (m_InputCommands.brush_visualize)
-	{
-		RenderBrush(context);
-	}
+
+
 
 	m_deviceResources->Present();
 }

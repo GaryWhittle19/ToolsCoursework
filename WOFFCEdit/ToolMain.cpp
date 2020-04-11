@@ -56,6 +56,8 @@ void ToolMain::onActionInitialise(HWND handle, int width, int height)
 	m_displayList = &m_d3dRenderer.GetDisplayList();
 	m_display_chunk = &m_d3dRenderer.GetDisplayChunk();
 	m_deviceResources = m_d3dRenderer.GetDeviceResourcesRef();
+	// Pass reference to editor camera object
+	m_d3dRenderer.SetToolCamera(&m_Camera);
 
 	//database connection establish
 	int rc;
@@ -322,112 +324,121 @@ void ToolMain::Tick(MSG* msg)
 		//add to scenegraph
 		//resend scenegraph to Direct X renderer
 
+	// Update the camera before ticking the renderer as we will need the view matrix first
+	UpdateToolCamera();
+
 	//Renderer Update Call
 	m_d3dRenderer.Tick(&m_toolInputCommands);
+
+	// Update the picking for object selection/terrain editing
 	UpdatePicking();
+
+	// Update the terrain editing settings TODO: REPLACE WITH MFC STUFF
 	UpdateSculptSettings();
+}
+
+void ToolMain::UpdateToolCamera()
+{
+	int dx = 0; int dy = 0;					
+	// Camera can only rotate when mouse right is down - dx, dy will remain 0, 0 otherwise
+	if (m_toolInputCommands.mouseRight) {	
+		dx = m_toolInputCommands.x - previous_mouse_x;
+		dy = m_toolInputCommands.y - previous_mouse_y;
+	}
+	// Update camera view matrix. dx, dy control camera orientation
+	m_Camera.UpdateCameraViewMatrix(m_toolInputCommands, dx, dy);	
+	// Set previous mouse values for next update
+	previous_mouse_x = m_toolInputCommands.x;
+	previous_mouse_y = m_toolInputCommands.y;
 }
 
 void ToolMain::UpdatePicking()
 {
 	// Get references to game variables and resources
-	m_cameraPosition = m_d3dRenderer.GetCameraPosition();
+	m_cameraPosition = m_Camera.GetCameraPosition();
 	m_world = m_d3dRenderer.GetWorldMatrix();
-	m_view = m_d3dRenderer.GetViewMatrix();
+	m_view = m_Camera.GetCameraViewMatrix();
 	m_projection = m_d3dRenderer.GetProjectionMatrix();
 	// Set up the ray and brush center vector
 	DirectX::SimpleMath::Ray picking_ray;
 	DirectX::SimpleMath::Vector3 brush_center;
+	bool DidHit = false;	// Bool for detecting failed intersection test
 
 	if (m_toolInputCommands.mouseLeft) {
 		switch (m_pickingMode) {
 
 		case 1:	// Object picking
-
 				// Get picking ray for object
-			picking_ray = m_pickingHandler.PerformPicking(
+			picking_ray = m_pickingHandler.PerformObjectPicking(
 				m_deviceResources->GetScreenViewport().Width, m_deviceResources->GetScreenViewport().Height,
 				m_toolInputCommands.x, m_toolInputCommands.y, m_world, m_projection, m_view,
 				m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_selectedObject,
 				*m_displayList, m_cameraPosition);
 			// Set mouseleft back up to perform a *click*
 			m_toolInputCommands.mouseLeft = false;
-
-			// If ray is being visualized
+			// Visualize ray if required
 			if (m_toolInputCommands.ray_visualize)
 				m_d3dRenderer.SetRayForVisualization(picking_ray);
 			break;
 
 		case 2:	// Terrain sculpting
-
 				// Get picking ray for terrain
-			picking_ray = m_pickingHandler.PerformPicking(
+			picking_ray = m_pickingHandler.PerformTerrainPicking(
 				m_deviceResources->GetScreenViewport().Width, m_deviceResources->GetScreenViewport().Height,
 				m_toolInputCommands.x, m_toolInputCommands.y, m_world, m_projection, m_view,
 				m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth,
 				*m_display_chunk, m_cameraPosition);
 			// Get brush center
-			brush_center = m_display_chunk->GetBrushCenter(picking_ray);
-
-			// Perform terrain painting
-			m_display_chunk->GenerateHeightmap(brush_size, brush_intensity, brush_center);
-
-			// Visualize brush if required
-			if (m_toolInputCommands.brush_visualize)
-				m_d3dRenderer.SetBrushForVisualization(brush_center, brush_size);
+			brush_center = m_display_chunk->GetBrushCenter(picking_ray, &DidHit);
+			// Perform terrain sculpting and visualize if intersection returned true
+			if (DidHit) {
+				m_display_chunk->GenerateHeightmap(brush_size, brush_intensity, brush_center);
+				// Visualize brush if required
+				if (m_toolInputCommands.brush_visualize)
+					m_d3dRenderer.SetBrushForVisualization(brush_center, brush_size);
+			}
 			// Visualize ray if required
 			if (m_toolInputCommands.ray_visualize)
 				m_d3dRenderer.SetRayForVisualization(picking_ray);
 			break;
 
 		case 3:	// Terrain painting
-
 				// Get picking ray for terrain
-			picking_ray = m_pickingHandler.PerformPicking(
+			picking_ray = m_pickingHandler.PerformTerrainPicking(
 				m_deviceResources->GetScreenViewport().Width, m_deviceResources->GetScreenViewport().Height,
 				m_toolInputCommands.x, m_toolInputCommands.y, m_world, m_projection, m_view,
 				m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth,
 				*m_display_chunk, m_cameraPosition);
 			// Get brush center
-			brush_center = m_display_chunk->GetBrushCenter(picking_ray);
-
-			// Perform terrain painting
-			m_display_chunk->PaintTerrain(brush_size, brush_intensity, brush_center, DirectX::XMFLOAT4(DirectX::Colors::Red));
-
-			// Visualize brush if required
-			if (m_toolInputCommands.brush_visualize)
-				m_d3dRenderer.SetBrushForVisualization(brush_center, brush_size);
+			brush_center = m_display_chunk->GetBrushCenter(picking_ray, &DidHit);
+			// Perform terrain painting and visualize if intersection returned true
+			if (DidHit) {
+				m_display_chunk->PaintTerrain(brush_size, brush_intensity, brush_center, DirectX::XMFLOAT4(DirectX::Colors::Red));
+				// Visualize brush if required
+				if (m_toolInputCommands.brush_visualize)
+					m_d3dRenderer.SetBrushForVisualization(brush_center, brush_size);
+			}
 			// Visualize ray if required
 			if (m_toolInputCommands.ray_visualize)
 				m_d3dRenderer.SetRayForVisualization(picking_ray);
 			break;
-
 		}
 	}
 
 	// If terrain sculpting/painting without left click held, visualize the brush but only when camera is stationary to make performance hit more bearable
-	if (m_toolInputCommands.brush_visualize && (m_pickingMode == 2 || m_pickingMode == 3) && !IsCameraMoving()) {
+	if (m_toolInputCommands.brush_visualize && !m_Camera.IsCameraMoving()) {
 		// Get picking ray for terrain
-		picking_ray = m_pickingHandler.PerformPicking(
+		picking_ray = m_pickingHandler.PerformTerrainPicking(
 			m_deviceResources->GetScreenViewport().Width, m_deviceResources->GetScreenViewport().Height,
 			m_toolInputCommands.x, m_toolInputCommands.y, m_world, m_projection, m_view,
 			m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth,
 			*m_display_chunk, m_cameraPosition);
 		// Get brush center
-		brush_center = m_display_chunk->GetBrushCenter(picking_ray);
+		brush_center = m_display_chunk->GetBrushCenter(picking_ray, &DidHit);
 		// Set the brush variables for visualization in game
+		if (DidHit)
 		m_d3dRenderer.SetBrushForVisualization(brush_center, brush_size);
 	}
-}
-
-bool ToolMain::IsCameraMoving() {
-	return (
-		m_toolInputCommands.forward ||
-		m_toolInputCommands.left ||
-		m_toolInputCommands.back ||
-		m_toolInputCommands.right ||
-		m_toolInputCommands.up ||
-		m_toolInputCommands.down);
 }
 
 void ToolMain::UpdateInput(MSG* msg)

@@ -6,7 +6,7 @@ class PickingHandler
 {
 public:
 	// OBJECT PICKING // ----------------------------------
-	DirectX::SimpleMath::Ray PerformPicking(	
+	DirectX::SimpleMath::Ray PerformObjectPicking(	
 		int window_x, int window_y, 					
 		int mouse_x, int mouse_y,
 		DirectX::SimpleMath::Matrix world, 
@@ -17,7 +17,7 @@ public:
 		std::vector<DisplayObject>& display_list,
 		DirectX::SimpleMath::Vector3 campos);			// Arguments for objects
 	// TERRAIN PICKING // ----------------------------------
-	DirectX::SimpleMath::Ray PerformPicking(
+	DirectX::SimpleMath::Ray PerformTerrainPicking(
 		int window_x, int window_y,
 		int mouse_x, int mouse_y,
 		DirectX::SimpleMath::Matrix world,

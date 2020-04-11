@@ -4,20 +4,18 @@
 
 #pragma once
 
+#include "Camera.h"
 #include "ChunkObject.h"
-#include "Debug.h"
 #include "DebugDraw.h"
 #include "DeviceResources.h"
 #include "DisplayChunk.h"
 #include "DisplayObject.h"
 #include "InputCommands.h"
-#include "Picking.h"
 #include "SceneObject.h"
 #include "SimpleMath.h"
 #include "StepTimer.h"
 #include "Toolbox.h"
 #include <vector>
-
 
 // A basic game implementation that creates a D3D11 device and
 // provides a game loop.
@@ -50,25 +48,31 @@ public: // Members
 	void OnResuming();
 	void OnWindowSizeChanged(int width, int height);
 
-	// TOOL SPECIFIC ------------------------------
+
+
+	// BEGIN TOOL SPECIFIC ------------------------------
 	void BuildDisplayList(std::vector<SceneObject>* SceneGraph);	// Note vector passed by reference 
 	void BuildDisplayChunk(ChunkObject *SceneChunk);
 	void SaveDisplayChunk(ChunkObject *SceneChunk);					// Saves geometry et al
 	//void ClearDisplayList();
+
 	// Getters for relevant variables and resources
-	DirectX::SimpleMath::Vector3 GetCameraPosition() { return m_camPosition; };
 	DirectX::SimpleMath::Matrix GetWorldMatrix() { return m_world; };
 	DirectX::SimpleMath::Matrix GetViewMatrix() { return m_view; };
 	DirectX::SimpleMath::Matrix GetProjectionMatrix() { return m_projection; };
 	std::vector<DisplayObject>& GetDisplayList() { return m_displayList; };
 	DisplayChunk& GetDisplayChunk() { return m_displayChunk; };
 	std::shared_ptr<DX::DeviceResources>& GetDeviceResourcesRef() { return m_deviceResources; };
+
+	// Setters
 	void SetRayForVisualization(DirectX::SimpleMath::Ray ray) { picking_ray = ray; };
 	void SetBrushForVisualization(DirectX::SimpleMath::Vector3 center, float radius) { brush_center = center; brush_radius = radius; };
+	void SetToolCamera(Camera* active_camera) { m_ToolCamera = active_camera; };
+
 	// Visual aid
 	void RenderRay(ID3D11DeviceContext* context);
 	void RenderBrush(ID3D11DeviceContext* context);
-	// TOOL SPECIFIC ------------------------------ // END
+	// END TOOL SPECIFIC ------------------------------ 
 
 #ifdef DXTK_AUDIO
 	void NewAudioDevice();
@@ -79,7 +83,6 @@ private: // Members
 	// Update the editor
 	void Update(DX::StepTimer const& timer);
 	void UpdateInput();
-	void UpdateCamera();
 	//
 	void CreateDeviceDependentResources();
 	void CreateWindowSizeDependentResources();
@@ -88,31 +91,29 @@ private: // Members
 
 private: // Variables
 
+	// BEGIN TOOL SPECIFIC ------------------------------
+	// Input handler
+	InputCommands					m_ToolInputCommands;	// The TOOL inputs - note, a GAME inputs is more appropriate for the actual gameplay input
 
-	// TOOL SPECIFIC ------------------------------
-	// Mouse location on viewport and logging function for debugging etc.
-	int prevMouseX = 0;
-	int prevMouseY = 0;
-	InputCommands						m_InputCommands;
-	// Functionality
-	float								m_movespeed;
-	// Camera
-	DirectX::SimpleMath::Vector3		m_camPosition;
-	DirectX::SimpleMath::Vector3		m_camOrientation;
-	DirectX::SimpleMath::Vector3		m_camLookAt;
-	DirectX::SimpleMath::Vector3		m_camLookDirection;
-	DirectX::SimpleMath::Vector3		m_camRight;
-	// Control variables
-	bool m_grid;							//grid rendering on / off
+	// Camera reference
+	Camera							*m_ToolCamera;			// The TOOL camera - note, a GAME camera is more appropriate for the actual gameplay camera
+
 	// Visualization
-	DirectX::SimpleMath::Ray picking_ray;
-	DirectX::SimpleMath::Vector3 brush_center; 
-	float brush_radius;
-	// TOOL SPECIFIC ------------------------------ // END
+	bool							m_grid;					// Grid rendering on / off
+	DirectX::SimpleMath::Ray		picking_ray;			// Used for object selection and terrain editing
+	DirectX::SimpleMath::Vector3	brush_center;			// Brush center and radius for terrain editing
+	float							brush_radius;
+	// END TOOL SPECIFIC ------------------------------
+
+
+
+	// Input and camera
+	InputCommands							m_PlayerInputCommands;	// Player inputs
+	Camera									*m_PlayerCamera;		// Player camera
 
 	// Objects and chunk
-	std::vector<DisplayObject>			m_displayList;
-	DisplayChunk						m_displayChunk;
+	std::vector<DisplayObject>				m_displayList;
+	DisplayChunk							m_displayChunk;
 
 	// Device resources.
     std::shared_ptr<DX::DeviceResources>    m_deviceResources;
