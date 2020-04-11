@@ -220,9 +220,9 @@ DirectX::SimpleMath::Vector3 DisplayChunk::GetBrushCenter(DirectX::SimpleMath::R
 
 void DisplayChunk::GenerateHeightmap(float radius, float intensity, DirectX::SimpleMath::Vector3 center)
 {
-	for (size_t x = 0; x < TERRAINRESOLUTION - 1; x++)
+	for (size_t x = 0; x < TERRAINRESOLUTION; x++)
 	{	// Loop through vertices again to do a distance check on the selected vertex. If within radius, expand based on mapped ranged value.		
-		for (int y = 0; y < TERRAINRESOLUTION - 1; y++)
+		for (int y = 0; y < TERRAINRESOLUTION; y++)
 		{
 			float proximity = DirectX::SimpleMath::Vector3::Distance(m_terrainGeometry[x][y].position, center);
 			if (proximity < radius)
@@ -238,9 +238,9 @@ void DisplayChunk::GenerateHeightmap(float radius, float intensity, DirectX::Sim
 
 void DisplayChunk::PaintTerrain(float radius, float intensity, DirectX::SimpleMath::Vector3 center, XMFLOAT4 color)
 {
-	for (size_t x = 0; x < TERRAINRESOLUTION - 1; x++)
+	for (size_t x = 0; x < TERRAINRESOLUTION; x++)
 	{	// Loop through vertices again to do a distance check on the selected vertex. If within radius, paint terrain.
-		for (int y = 0; y < TERRAINRESOLUTION - 1; y++)
+		for (int y = 0; y < TERRAINRESOLUTION; y++)
 		{
 			float proximity = DirectX::SimpleMath::Vector3::Distance(m_terrainGeometry[x][y].position, center);
 			if (proximity < radius)
