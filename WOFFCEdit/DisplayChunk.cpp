@@ -147,7 +147,6 @@ void DisplayChunk::LoadVertexColours(std::shared_ptr<DX::DeviceResources> DevRes
 	// Setup D3DDeviceContext and D3DDevice
 	auto devicecontext = DevResources->GetD3DDeviceContext();
 	auto device = DevResources->GetD3DDevice();
-
 	// Create Resource, Texture2D and Texture2D Description
 	ID3D11Resource* texture_resource;
 	ID3D11Texture2D* dds_texture;		// dds texture is for storing the loaded texture
@@ -168,42 +167,36 @@ void DisplayChunk::LoadVertexColours(std::shared_ptr<DX::DeviceResources> DevRes
 	// Load the DirectDraw Surface and create a texture2D 
 	HRESULT hr = CreateDDSTextureFromFile(device, L"terrain_vertex_colours.dds", &texture_resource, nullptr);
 	if (FAILED(hr)) {
-		// Failed to load texture. 
+		// Failed to load texture. Don't do anything. 
 	}
-	hr = texture_resource->QueryInterface(IID_ID3D11Texture2D, (void**)&dds_texture);
-	if (FAILED(hr)) {
-		// Failed to query correct resource. 
-	}
+	else {
+		// Cast texture_resource to dds_texture (ID3D11Resource to ID3D11Texture2D)
+		texture_resource->QueryInterface(IID_ID3D11Texture2D, (void**)&dds_texture);
 
-	// Create a new texture with the above texture description to do CPU operations
-	try {
-		hr = device->CreateTexture2D(&texture_desc, nullptr, &terrain_texture);
-	}
-	catch (std::exception ex) {
-		printf(ex.what());
-	}
-	
-	// Copy the texture over for reading
-	devicecontext->CopyResource(terrain_texture, dds_texture);
+		// Create a new texture with the above texture description - for CPU access
+		device->CreateTexture2D(&texture_desc, nullptr, &terrain_texture);
 
-	// Map the resource 
-	D3D11_MAPPED_SUBRESOURCE mapped_resource;
-	
-	// Map the subresource
-	devicecontext->Map(terrain_texture, 0, D3D11_MAP_READ, 0, &mapped_resource);
+		// Copy the texture over for reading (dds_texture copied to terrain_texture)
+		devicecontext->CopyResource(terrain_texture, dds_texture);
 
-	// Access the mapped resource pixel values from pSysMem
-	XMFLOAT4* floatval = reinterpret_cast<XMFLOAT4*>(mapped_resource.pData);
+		// Create mapped subresource
+		D3D11_MAPPED_SUBRESOURCE mapped_resource;
 
-	int size = TERRAINRESOLUTION * TERRAINRESOLUTION;
+		// Map terrain_texture using subresource
+		devicecontext->Map(terrain_texture, 0, D3D11_MAP_READ, 0, &mapped_resource);
 
-	for (int i = 0; i < TERRAINRESOLUTION; i++) {
-		for (int j = 0; j < TERRAINRESOLUTION; j++) {
-			int index = (i * TERRAINRESOLUTION) + j;
-			m_terrainGeometry[i][j].color = floatval[index];
-			m_terrainGeometry[i][j].color.w = 1.0f;
+		// Access the mapped resource pixel values from pSysMem
+		XMFLOAT4* floatval = reinterpret_cast<XMFLOAT4*>(mapped_resource.pData);
+
+		// Loop through terrain geometry and set 
+		for (int i = 0; i < TERRAINRESOLUTION; i++) {
+			for (int j = 0; j < TERRAINRESOLUTION; j++) {
+				int index = (i * TERRAINRESOLUTION) + j;
+				m_terrainGeometry[i][j].color = floatval[index];
+			}
 		}
 	}
+	
 }
 
 void DisplayChunk::SaveVertexColours(std::shared_ptr<DX::DeviceResources> DevResources)
@@ -222,7 +215,7 @@ void DisplayChunk::SaveVertexColours(std::shared_ptr<DX::DeviceResources> DevRes
 	texture_desc.SampleDesc.Count = 1;
 	texture_desc.SampleDesc.Quality = 0;
 	texture_desc.Usage = D3D11_USAGE_DYNAMIC;
-	texture_desc.BindFlags = 0;
+	texture_desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 	texture_desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	texture_desc.MiscFlags = 0;
 
@@ -249,10 +242,13 @@ void DisplayChunk::SaveVertexColours(std::shared_ptr<DX::DeviceResources> DevRes
 	D3D11_SUBRESOURCE_DATA texture_data;
 	texture_data.pSysMem = (void*)buffer;
 	texture_data.SysMemPitch = TERRAINRESOLUTION * components * sizeof(float);
+
 	// Create the texture using the terrain colour data
 	device->CreateTexture2D(&texture_desc, &texture_data, &terrain_texture);
+
 	// Save the texture to a .dds file
 	HRESULT hr = SaveDDSTextureToFile(devicecontext, terrain_texture, L"terrain_vertex_colours.dds");
+
 	// Delete the buffer
 	delete[] buffer;
 }
@@ -389,10 +385,10 @@ void DisplayChunk::CalculateTerrainNormals()
 			leftRightVector.z = (m_terrainGeometry[i][j - 1].position.z - m_terrainGeometry[i][j + 1].position.z);
 
 
-			leftRightVector.Cross(upDownVector, normalVector);	//get cross product
-			normalVector.Normalize();			//normalise it.
+			leftRightVector.Cross(upDownVector, normalVector);	// get cross product
+			normalVector.Normalize();							// normalise it.
 
-			m_terrainGeometry[i][j].normal = normalVector;	//set the normal for this point based on our result
+			m_terrainGeometry[i][j].normal = normalVector;	// set the normal for this point based on our result
 		}
 	}
 }
