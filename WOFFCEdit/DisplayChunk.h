@@ -17,6 +17,8 @@ public:
 	void RenderBatch(std::shared_ptr<DX::DeviceResources>  DevResources);
 	void InitialiseBatch();	//initial setup, base coordinates etc based on scale
 	void LoadHeightMap(std::shared_ptr<DX::DeviceResources>  DevResources);
+	void LoadVertexColours(std::shared_ptr<DX::DeviceResources> DevResources);
+	void SaveVertexColours(std::shared_ptr<DX::DeviceResources> DevResources);
 	void SaveHeightMap();			//saves the heigtmap back to file.
 	void UpdateTerrain();			//updates the geometry based on the heigtmap
 	void UpdateHeightmap();

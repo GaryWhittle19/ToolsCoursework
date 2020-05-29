@@ -3,6 +3,7 @@
 #include <vector>
 #include <sstream>
 
+
 //
 //ToolMain Class
 ToolMain::ToolMain()
@@ -197,6 +198,8 @@ void ToolMain::onActionLoad()
 	m_d3dRenderer.BuildDisplayList(&m_sceneGraph);
 	// Build the renderable chunk and return a reference to the display chunk
 	m_d3dRenderer.BuildDisplayChunk(&m_chunk);
+	// Load the vertex colours
+	m_display_chunk->LoadVertexColours(m_deviceResources);
 }
 
 void ToolMain::onActionSave()
@@ -291,6 +294,7 @@ void ToolMain::onActionSave()
 void ToolMain::onActionSaveTerrain()
 {
 	m_d3dRenderer.SaveDisplayChunk(&m_chunk);
+	m_display_chunk->SaveVertexColours(m_deviceResources);
 }
 
 void ToolMain::onActionChangeMode(int mode)

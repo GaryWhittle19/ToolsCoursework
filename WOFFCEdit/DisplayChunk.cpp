@@ -3,9 +3,12 @@
 #include "DisplayChunk.h"
 #include "Game.h"
 #include "Toolbox.h"
+#include "ScreenGrab.h"
+#include <DDSTextureLoader.h>
 
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
+using namespace Microsoft::WRL;
 
 DisplayChunk::DisplayChunk()
 {
@@ -116,12 +119,11 @@ void DisplayChunk::LoadHeightMap(std::shared_ptr<DX::DeviceResources>  DevResour
 	m_terrainEffect = std::make_unique<BasicEffect>(device);
 	m_terrainEffect->EnableDefaultLighting();
 	m_terrainEffect->SetLightingEnabled(true);
-	// Texture?
-	m_terrainEffect->SetTextureEnabled(false);
+	// Colour!/Texture?
+	bool is_vertex_painted = true;
+	m_terrainEffect->SetVertexColorEnabled(is_vertex_painted);
+	m_terrainEffect->SetTextureEnabled(!is_vertex_painted);
 	m_terrainEffect->SetTexture(m_texture_diffuse);
-	// Colour!
-	m_terrainEffect->SetVertexColorEnabled(true);
-
 
 	void const* shaderByteCode;
 	size_t byteCodeLength;
@@ -140,6 +142,124 @@ void DisplayChunk::LoadHeightMap(std::shared_ptr<DX::DeviceResources>  DevResour
 	m_batch = std::make_unique<PrimitiveBatch<VertexPositionNormalColorTexture>>(devicecontext);
 }
 
+void DisplayChunk::LoadVertexColours(std::shared_ptr<DX::DeviceResources> DevResources)
+{
+	// Setup D3DDeviceContext and D3DDevice
+	auto devicecontext = DevResources->GetD3DDeviceContext();
+	auto device = DevResources->GetD3DDevice();
+
+	// Create Resource, Texture2D and Texture2D Description
+	ID3D11Resource* texture_resource;
+	ID3D11Texture2D* dds_texture;		// dds texture is for storing the loaded texture
+	ID3D11Texture2D* terrain_texture;	// terrain texture is for accessing the texture on the cpu
+	D3D11_TEXTURE2D_DESC texture_desc;
+	// Set up a texture description 
+	texture_desc.Width = TERRAINRESOLUTION;
+	texture_desc.Height = TERRAINRESOLUTION;
+	texture_desc.MipLevels = texture_desc.ArraySize = 1;
+	texture_desc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	texture_desc.SampleDesc.Count = 1;
+	texture_desc.SampleDesc.Quality = 0;
+	texture_desc.Usage = D3D11_USAGE_STAGING;
+	texture_desc.BindFlags = 0;
+	texture_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+	texture_desc.MiscFlags = 0;
+
+	// Load the DirectDraw Surface and create a texture2D 
+	HRESULT hr = CreateDDSTextureFromFile(device, L"terrain_vertex_colours.dds", &texture_resource, nullptr);
+	if (FAILED(hr)) {
+		// Failed to load texture. 
+	}
+	hr = texture_resource->QueryInterface(IID_ID3D11Texture2D, (void**)&dds_texture);
+	if (FAILED(hr)) {
+		// Failed to query correct resource. 
+	}
+
+	// Create a new texture with the above texture description to do CPU operations
+	try {
+		hr = device->CreateTexture2D(&texture_desc, nullptr, &terrain_texture);
+	}
+	catch (std::exception ex) {
+		printf(ex.what());
+	}
+	
+	// Copy the texture over for reading
+	devicecontext->CopyResource(terrain_texture, dds_texture);
+
+	// Map the resource 
+	D3D11_MAPPED_SUBRESOURCE mapped_resource;
+	
+	// Map the subresource
+	devicecontext->Map(terrain_texture, 0, D3D11_MAP_READ, 0, &mapped_resource);
+
+	// Access the mapped resource pixel values from pSysMem
+	XMFLOAT4* floatval = reinterpret_cast<XMFLOAT4*>(mapped_resource.pData);
+
+	int size = TERRAINRESOLUTION * TERRAINRESOLUTION;
+
+	for (int i = 0; i < TERRAINRESOLUTION; i++) {
+		for (int j = 0; j < TERRAINRESOLUTION; j++) {
+			int index = (i * TERRAINRESOLUTION) + j;
+			m_terrainGeometry[i][j].color = floatval[index];
+			m_terrainGeometry[i][j].color.w = 1.0f;
+		}
+	}
+}
+
+void DisplayChunk::SaveVertexColours(std::shared_ptr<DX::DeviceResources> DevResources)
+{
+	// Setup D3DDeviceContext and D3DDevice
+	auto devicecontext = DevResources->GetD3DDeviceContext();
+	auto device = DevResources->GetD3DDevice();
+	// Create Texture2D and Texture2D Description
+	ID3D11Texture2D* terrain_texture;
+	D3D11_TEXTURE2D_DESC texture_desc;
+	// Set up a texture description 
+	texture_desc.Width = TERRAINRESOLUTION;
+	texture_desc.Height = TERRAINRESOLUTION;
+	texture_desc.MipLevels = texture_desc.ArraySize = 1;
+	texture_desc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	texture_desc.SampleDesc.Count = 1;
+	texture_desc.SampleDesc.Quality = 0;
+	texture_desc.Usage = D3D11_USAGE_DYNAMIC;
+	texture_desc.BindFlags = 0;
+	texture_desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	texture_desc.MiscFlags = 0;
+
+	// Create vertex colour vector
+	std::vector<float> colour_vector;
+	for (int i = 0; i < TERRAINRESOLUTION; i++) {
+		for (int j = 0; j < TERRAINRESOLUTION; j++) {
+			colour_vector.push_back((float)m_terrainGeometry[i][j].color.x);
+			colour_vector.push_back((float)m_terrainGeometry[i][j].color.y);
+			colour_vector.push_back((float)m_terrainGeometry[i][j].color.z);
+			colour_vector.push_back((float)m_terrainGeometry[i][j].color.w);
+		}
+	}
+
+	// Initialise buffer parameters
+	const int components = 4;
+	const int length = components * TERRAINRESOLUTION * TERRAINRESOLUTION;
+	// Fill buffer with vertex colours
+	float* buffer = new float[length * sizeof(float)];
+	for (int i = 0; i < length; i++)
+		buffer[i] = colour_vector[i];
+
+	// Set the texture data using the buffer contents
+	D3D11_SUBRESOURCE_DATA texture_data;
+	texture_data.pSysMem = (void*)buffer;
+	texture_data.SysMemPitch = TERRAINRESOLUTION * components * sizeof(float);
+	// Create the texture using the terrain colour data
+	device->CreateTexture2D(&texture_desc, &texture_data, &terrain_texture);
+	// Save the texture to a .dds file
+	HRESULT hr = SaveDDSTextureToFile(devicecontext, terrain_texture, L"terrain_vertex_colours.dds");
+	// Delete the buffer
+	delete[] buffer;
+}
+
+// Screenshot functionality
+	//auto deviceresource = DevResources->GetSwapChain()->GetBuffer(0, __uuidof(ID3D11Texture2D),
+	//	reinterpret_cast<LPVOID*>(terrain_texture.GetAddressOf()));
 
 void DisplayChunk::SaveHeightMap()
 {
