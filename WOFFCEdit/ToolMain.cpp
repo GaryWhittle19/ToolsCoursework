@@ -318,6 +318,13 @@ void ToolMain::onActionToggleRayVisualization()
 	m_toolInputCommands.ray_visualize = !m_toolInputCommands.ray_visualize;
 }
 
+void ToolMain::onActionSetBrushColor(BYTE R, BYTE G, BYTE B)
+{
+	brush_color.x = R / 255.f;
+	brush_color.y = G / 255.f;
+	brush_color.z = B / 255.f;
+}
+
 void ToolMain::Tick(MSG* msg)
 {
 	//do we have a selection
@@ -417,7 +424,7 @@ void ToolMain::UpdatePicking()
 			brush_center = m_display_chunk->GetBrushCenter(picking_ray, &DidHit);
 			// Perform terrain painting and visualize if intersection returned true
 			if (DidHit) {
-				m_display_chunk->PaintTerrain(brush_size, brush_intensity, brush_center, DirectX::XMFLOAT4(DirectX::Colors::Red));
+				m_display_chunk->PaintTerrain(brush_size, brush_intensity, brush_center, brush_color);
 				// Visualize brush if required
 				if (m_toolInputCommands.brush_visualize)
 					m_d3dRenderer.SetBrushForVisualization(brush_center, brush_size);

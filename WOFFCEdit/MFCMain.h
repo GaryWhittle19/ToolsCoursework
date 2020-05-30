@@ -21,16 +21,24 @@ public:
 
 private:
 
-	CMyFrame * m_frame;	//handle to the frame where all our UI is
-	HWND m_toolHandle;	//Handle to the MFC window
-	ToolMain m_ToolSystem;	//Instance of Tool System that we interface to. 
-	CRect WindowRECT;	//Window area rectangle. 
-	SelectDialogue m_ToolSelectDialogue;			//for modeless dialogue, declare it here
+	CMyFrame *m_frame;		// Handle to the frame where all our UI is
+	HWND m_toolHandle;		// Handle to the MFC window
+	ToolMain m_ToolSystem;	// Instance of Tool System that we interface to. 
+	CRect WindowRECT;		// Window area rectangle. 
+	
+	// For modeless dialogue, declare below
+	SelectDialogue m_ToolSelectDialogue;			
+
+	// For modal dialogue, declare below
+	CColorDialog m_color_dialogue;	// Color picking dialogue
+	BYTE R = 0xFF;
+	BYTE G = 0x00;
+	BYTE B = 0x00;					// Colors stored as byte values.
 
 	int m_width;		
 	int m_height;
 	
-	//Interface funtions for menu and toolbar etc requires
+	// Interface funtions for menu and toolbar etc requires
 	afx_msg void MenuFileQuit();
 	afx_msg void MenuFileSaveTerrain();
 	afx_msg void MenuEditSelect();
@@ -40,7 +48,7 @@ private:
 	afx_msg void MenuModeTerrainSculpt();
 	afx_msg void MenuModeTerrainPaint();
 	afx_msg	void ToolbarSaveButton();
+	afx_msg void ToolbarColorsButton();
 
-
-	DECLARE_MESSAGE_MAP()	// required macro for message map functionality  One per class
+	DECLARE_MESSAGE_MAP()	// Required macro for message map functionality. One per class.
 };

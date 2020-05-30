@@ -94,7 +94,6 @@ void DisplayChunk::LoadHeightMap(std::shared_ptr<DX::DeviceResources>  DevResour
 	FILE* pFile = NULL;
 
 	// Open The File In Read / Binary Mode.
-
 	pFile = fopen(m_heightmap_path.c_str(), "rb");
 	// Check To See If We Found The File And Could Open It
 	if (pFile == NULL)
@@ -196,7 +195,6 @@ void DisplayChunk::LoadVertexColours(std::shared_ptr<DX::DeviceResources> DevRes
 			}
 		}
 	}
-	
 }
 
 void DisplayChunk::SaveVertexColours(std::shared_ptr<DX::DeviceResources> DevResources)

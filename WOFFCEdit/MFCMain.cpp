@@ -7,6 +7,7 @@ BEGIN_MESSAGE_MAP(MFCMain, CWinApp)
 	ON_COMMAND(ID_BUTTON_SAVE, &MFCMain::ToolbarSaveButton)
 	ON_COMMAND(ID_BUTTON_WIRE, &MFCMain::MenuEditWireframe)
 	ON_COMMAND(ID_BUTTON_RAY, &MFCMain::MenuEditRayVisualize)
+	ON_COMMAND(ID_BUTTON_COLOR, &MFCMain::ToolbarColorsButton)
 	// FILE
 	ON_COMMAND(ID_FILE_QUIT, &MFCMain::MenuFileQuit)
 	ON_COMMAND(ID_FILE_SAVETERRAIN, &MFCMain::MenuFileSaveTerrain)
@@ -29,7 +30,7 @@ BOOL MFCMain::InitInstance()
 	m_pMainWnd = m_frame;
 
 	m_frame->Create(NULL,
-					_T("G-Engine 2020"),
+					_T("World of Flimflamcraft Editor"),
 					WS_OVERLAPPEDWINDOW,
 					CRect(0, 0, 1024, 768),
 					NULL,
@@ -41,7 +42,6 @@ BOOL MFCMain::InitInstance()
 	//show and set the window to run and update. 
 	m_frame->ShowWindow(SW_SHOW);
 	m_frame->UpdateWindow();
-
 
 	//get the rect from the MFC window so we can get its dimensions
 	m_toolHandle = m_frame->m_DirXView.GetSafeHwnd();				//handle of directX child window
@@ -109,9 +109,9 @@ void MFCMain::MenuEditSelect()
 	//SelectDialogue m_ToolSelectDialogue(NULL, &m_ToolSystem.m_sceneGraph);		//create our dialoguebox //modal constructor
 	//m_ToolSelectDialogue.DoModal();	// start it up modal
 
-	//modeless dialogue must be declared in the class.   If we do local it will go out of scope instantly and destroy itself
-	m_ToolSelectDialogue.Create(IDD_DIALOG1);	//Start up modeless
-	m_ToolSelectDialogue.ShowWindow(SW_SHOW);	//show modeless
+	// Modeless dialogue must be declared in the class. If we do local it will go out of scope instantly and destroy itself.
+	m_ToolSelectDialogue.Create(IDD_DIALOG1);	// Start up modeless dialog
+	m_ToolSelectDialogue.ShowWindow(SW_SHOW);	// Show modeless dialog
 	m_ToolSelectDialogue.SetObjectData(&m_ToolSystem.m_sceneGraph, &m_ToolSystem.m_selectedObject);
 }
 
@@ -143,6 +143,18 @@ void MFCMain::MenuModeTerrainPaint()
 void MFCMain::ToolbarSaveButton()
 {
 	m_ToolSystem.onActionSave();
+}
+
+void MFCMain::ToolbarColorsButton()
+{
+	if (m_color_dialogue.DoModal() == IDOK)
+	{
+		COLORREF color = m_color_dialogue.GetColor();
+		R = GetRValue(color);
+		G = GetGValue(color);
+		B = GetBValue(color);
+	}
+	m_ToolSystem.onActionSetBrushColor(R, G, B);
 }
 
 MFCMain::MFCMain()

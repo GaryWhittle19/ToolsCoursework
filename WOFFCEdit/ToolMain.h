@@ -28,6 +28,7 @@ public: // Methods
 	afx_msg void	onActionChangeMode(int mode);							// Change editor mode (objects, terrain...)
 	afx_msg void	onActionToggleWireframe();								// Toggle wireframe editing
 	afx_msg void	onActionToggleRayVisualization();						// Toggle ray renderering 
+	afx_msg void	onActionSetBrushColor(BYTE R, BYTE G, BYTE B);			// Set brush color for vertex painting
 
 	// Standard tick and update functions
 	void	Tick(MSG *msg);
@@ -78,4 +79,6 @@ private: // Variables
 
 	int									previous_mouse_x = 0;	// Previous mouse values for calculating delta x/y
 	int									previous_mouse_y = 0;
+
+	DirectX::XMFLOAT4					brush_color = DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
 };
