@@ -35,18 +35,22 @@ private:
 	BYTE G = 0x00;
 	BYTE B = 0x00;					// Colors stored as byte values.
 
+	// For storing and height of the DirectX window.
 	int m_width;		
 	int m_height;
 	
 	// Interface funtions for menu and toolbar etc requires
 	afx_msg void MenuFileQuit();
 	afx_msg void MenuFileSaveTerrain();
+
 	afx_msg void MenuEditSelect();
 	afx_msg void MenuEditWireframe();
 	afx_msg void MenuEditRayVisualize();
+
 	afx_msg void MenuModeSelect();
 	afx_msg void MenuModeTerrainSculpt();
 	afx_msg void MenuModeTerrainPaint();
+
 	afx_msg	void ToolbarSaveButton();
 	afx_msg void ToolbarColorsButton();
 

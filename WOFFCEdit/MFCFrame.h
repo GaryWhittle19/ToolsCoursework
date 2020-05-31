@@ -1,6 +1,7 @@
 #pragma once
 #include <afxwin.h> 
 #include <afxext.h>
+#include <afxcmn.h>
 #include "MFCRenderFrame.h"
 #include "ToolMain.h"
 
@@ -15,6 +16,7 @@ public:
 
 	CMenu			m_menu1;	//menu bar
 	CStatusBar		m_wndStatusBar;
+	CSliderCtrl		m_camspeed_trackbar;
 	CToolBar		m_toolBar;
 	CChildRender	m_DirXView;
 

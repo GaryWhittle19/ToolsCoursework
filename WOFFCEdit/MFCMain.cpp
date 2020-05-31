@@ -25,26 +25,26 @@ END_MESSAGE_MAP()
 
 BOOL MFCMain::InitInstance()
 {
-	//instanciate the mfc frame
+	// Instanciate the mfc frame
 	m_frame = new CMyFrame();
 	m_pMainWnd = m_frame;
 
 	m_frame->Create(NULL,
 					_T("World of Flimflamcraft Editor"),
 					WS_OVERLAPPEDWINDOW,
-					CRect(0, 0, 1024, 768),
+					CRect(50, 50, 1024, 768),
 					NULL,
 					NULL,
 					0,
 					NULL
 				);
 
-	//show and set the window to run and update. 
+	// Show and set the window to run and update. 
 	m_frame->ShowWindow(SW_SHOW);
 	m_frame->UpdateWindow();
 
-	//get the rect from the MFC window so we can get its dimensions
-	m_toolHandle = m_frame->m_DirXView.GetSafeHwnd();				//handle of directX child window
+	// Get the rect from the MFC window so we can get its dimensions
+	m_toolHandle = m_frame->m_DirXView.GetSafeHwnd();				// Handle of directX child window
 	m_frame->m_DirXView.GetClientRect(&WindowRECT);
 	m_width		= WindowRECT.Width();
 	m_height	= WindowRECT.Height();
@@ -85,7 +85,7 @@ int MFCMain::Run()
 			std::wstring statusString = L"Selected Object: " + std::to_wstring(ID);
 			m_ToolSystem.Tick(&msg);
 
-			//send current object ID to status bar in The main frame
+			// Send current object ID to status bar in The main frame
 			m_frame->m_wndStatusBar.SetPaneText(1, statusString.c_str(), 1);	
 		}
 	}
@@ -95,7 +95,7 @@ int MFCMain::Run()
 
 void MFCMain::MenuFileQuit()
 {
-	//will post message to the message thread that will exit the application normally
+	// Will post message to the message thread that will exit the application normally
 	PostQuitMessage(0);
 }
 
