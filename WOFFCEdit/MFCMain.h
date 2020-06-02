@@ -20,7 +20,6 @@ public:
 	int  Run();
 
 private:
-
 	CMyFrame *m_frame;		// Handle to the frame where all our UI is
 	HWND m_toolHandle;		// Handle to the MFC window
 	ToolMain m_ToolSystem;	// Instance of Tool System that we interface to. 
@@ -54,5 +53,11 @@ private:
 	afx_msg	void ToolbarSaveButton();
 	afx_msg void ToolbarColorsButton();
 
+	afx_msg void CheckTrackbars();
+
 	DECLARE_MESSAGE_MAP()	// Required macro for message map functionality. One per class.
+
+	// Booleans - wireframe and rays on/off
+	bool wireframe_enabled = false;
+	bool rays_enabled = false;
 };

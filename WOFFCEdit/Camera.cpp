@@ -61,16 +61,16 @@ void Camera::UpdateCameraViewMatrix(InputCommands m_InputCommands, int dx, int d
 
 void Camera::HandleInput(InputCommands& m_InputCommands)
 {
+	float currentMovespeed = m_camMovespeed;
 	// Camera sprint
-	if (m_InputCommands.sprint) { m_camMovespeed = 2.0f; }
-	else m_camMovespeed = 1.0f;
+	if (m_InputCommands.sprint) { currentMovespeed = 2.0f * m_camMovespeed; }
 	// Movement in xyz
-	if (m_InputCommands.forward) { m_camPosition += m_camLookDirection * m_camMovespeed; }
-	if (m_InputCommands.back) { m_camPosition -= m_camLookDirection * m_camMovespeed; }
-	if (m_InputCommands.right) { m_camPosition += m_camRight * m_camMovespeed; }
-	if (m_InputCommands.left) { m_camPosition -= m_camRight * m_camMovespeed; }
-	if (m_InputCommands.up) { m_camPosition.y += m_camMovespeed; }
-	if (m_InputCommands.down) { m_camPosition.y -= m_camMovespeed; }
+	if (m_InputCommands.forward) { m_camPosition += m_camLookDirection * currentMovespeed; }
+	if (m_InputCommands.back) { m_camPosition -= m_camLookDirection * currentMovespeed; }
+	if (m_InputCommands.right) { m_camPosition += m_camRight * currentMovespeed; }
+	if (m_InputCommands.left) { m_camPosition -= m_camRight * currentMovespeed; }
+	if (m_InputCommands.up) { m_camPosition.y += currentMovespeed; }
+	if (m_InputCommands.down) { m_camPosition.y -= currentMovespeed; }
 	// Determine if camera is moving
 	m_camMoving = (
 		m_InputCommands.forward ||

@@ -26,9 +26,12 @@ public: // Methods
 	afx_msg	void	onActionSave();											// Save the current chunk
 	afx_msg void	onActionSaveTerrain();									// Save chunk geometry
 	afx_msg void	onActionChangeMode(int mode);							// Change editor mode (objects, terrain...)
-	afx_msg void	onActionToggleWireframe();								// Toggle wireframe editing
-	afx_msg void	onActionToggleRayVisualization();						// Toggle ray renderering 
+	afx_msg bool	onActionToggleWireframe();								// Toggle wireframe editing
+	afx_msg bool	onActionToggleRayVisualization();						// Toggle ray renderering 
 	afx_msg void	onActionSetBrushColor(BYTE R, BYTE G, BYTE B);			// Set brush color for vertex painting
+	afx_msg void	onActionChangeCameraSpeed(float camera_speed);			// Change camera speed
+	afx_msg void	onActionChangeBrushSize(float new_size);				// Change size of terrain brush
+	afx_msg void	onActionChangeBrushIntensity(float new_intensity);		// Change intensity of terrain brush
 
 	// Standard tick and update functions
 	void	Tick(MSG *msg);
@@ -42,7 +45,6 @@ public:	// Variables
 private: // Methods
 	void UpdateToolCamera();									// Update the editor's camera
 	void UpdatePicking();										// Update mouse picking
-	void UpdateSculptSettings();								// Change brush settings
 	// void	onContentAdded();
 
 private: // Variables

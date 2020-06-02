@@ -308,14 +308,16 @@ void ToolMain::onActionChangeMode(int mode)
 	}
 }
 
-void ToolMain::onActionToggleWireframe()
+bool ToolMain::onActionToggleWireframe()
 {
 	m_toolInputCommands.wireframe_toggle = !m_toolInputCommands.wireframe_toggle;
+	return m_toolInputCommands.wireframe_toggle;
 }
 
-void ToolMain::onActionToggleRayVisualization()
+bool ToolMain::onActionToggleRayVisualization()
 {
 	m_toolInputCommands.ray_visualize = !m_toolInputCommands.ray_visualize;
+	return m_toolInputCommands.ray_visualize;
 }
 
 void ToolMain::onActionSetBrushColor(BYTE R, BYTE G, BYTE B)
@@ -323,6 +325,21 @@ void ToolMain::onActionSetBrushColor(BYTE R, BYTE G, BYTE B)
 	brush_color.x = R / 255.f;
 	brush_color.y = G / 255.f;
 	brush_color.z = B / 255.f;
+}
+
+void ToolMain::onActionChangeCameraSpeed(float camera_speed)
+{
+	m_Camera.SetCameraMovespeed(camera_speed);
+}
+
+void ToolMain::onActionChangeBrushSize(float new_brush_size)
+{
+	brush_size = new_brush_size;
+}
+
+void ToolMain::onActionChangeBrushIntensity(float new_brush_intensity)
+{
+	brush_intensity = new_brush_intensity;
 }
 
 void ToolMain::Tick(MSG* msg)
@@ -343,9 +360,6 @@ void ToolMain::Tick(MSG* msg)
 
 	// Update the picking for object selection/terrain editing
 	UpdatePicking();
-
-	// Update the terrain editing settings TODO: REPLACE WITH MFC STUFF
-	UpdateSculptSettings();
 }
 
 void ToolMain::UpdateToolCamera()
@@ -528,34 +542,5 @@ void ToolMain::UpdateInput(MSG* msg)
 		if (m_toolInputCommands.brush_control_int > 1) {	// Ensure that the cycle_mode int won't go rogue
 			m_toolInputCommands.brush_control_int = 0;
 		}
-	}
-}
-
-void ToolMain::UpdateSculptSettings()
-{
-	switch (m_toolInputCommands.brush_control_int) {
-	case 0:
-		if (m_toolInputCommands.decrease)
-		{
-			brush_size -= 0.333f;
-		}
-		if (m_toolInputCommands.increase)
-		{
-			brush_size += 0.333f;
-		}
-		brush_size = Toolbox::Clamp(brush_size, 1.0f, 200.0f);
-		break;
-
-	case 1:
-		if (m_toolInputCommands.decrease)
-		{
-			brush_intensity -= 0.025f;
-		}
-		if (m_toolInputCommands.increase)
-		{
-			brush_intensity += 0.025f;
-		}
-		brush_intensity = Toolbox::Clamp(brush_intensity, -2.0f, 2.0f);
-		break;
 	}
 }

@@ -19,7 +19,7 @@ BEGIN_MESSAGE_MAP(MFCMain, CWinApp)
 	ON_COMMAND(ID_MODE_SELECT, &MFCMain::MenuModeSelect)
 	ON_COMMAND(ID_MODE_TERRAIN_SCULPT, &MFCMain::MenuModeTerrainSculpt)
 	ON_COMMAND(ID_MODE_TERRAIN_PAINT, &MFCMain::MenuModeTerrainPaint)
-	
+	//
 	ON_UPDATE_COMMAND_UI(ID_INDICATOR_TOOL, &CMyFrame::OnUpdatePage)
 END_MESSAGE_MAP()
 
@@ -32,7 +32,7 @@ BOOL MFCMain::InitInstance()
 	m_frame->Create(NULL,
 					_T("World of Flimflamcraft Editor"),
 					WS_OVERLAPPEDWINDOW,
-					CRect(50, 50, 1024, 768),
+					CRect(-10, 0, 1930, 1090),
 					NULL,
 					NULL,
 					0,
@@ -88,6 +88,10 @@ int MFCMain::Run()
 			// Send current object ID to status bar in The main frame
 			m_frame->m_wndStatusBar.SetPaneText(1, statusString.c_str(), 1);	
 		}
+
+		if (WM_HSCROLL) {
+			CheckTrackbars();
+		}
 	}
 
 	return (int)msg.wParam;
@@ -117,12 +121,20 @@ void MFCMain::MenuEditSelect()
 
 void MFCMain::MenuEditWireframe()
 {
-	m_ToolSystem.onActionToggleWireframe();
+	bool wireframe_enabled = m_ToolSystem.onActionToggleWireframe();
+	if (wireframe_enabled)
+	m_frame->m_menu1.CheckMenuItem(ID_EDIT_WIREFRAME, MF_CHECKED | MF_BYCOMMAND);
+	else 
+	m_frame->m_menu1.CheckMenuItem(ID_EDIT_WIREFRAME, MF_UNCHECKED | MF_BYCOMMAND);
 }
 
 void MFCMain::MenuEditRayVisualize()
 {
-	m_ToolSystem.onActionToggleRayVisualization();
+	bool rays_enabled = m_ToolSystem.onActionToggleRayVisualization();
+	if (rays_enabled)
+	m_frame->m_menu1.CheckMenuItem(ID_EDIT_RAY, MF_CHECKED | MF_BYCOMMAND);
+	else
+	m_frame->m_menu1.CheckMenuItem(ID_EDIT_RAY, MF_UNCHECKED | MF_BYCOMMAND);
 }
 
 void MFCMain::MenuModeSelect()
@@ -155,6 +167,16 @@ void MFCMain::ToolbarColorsButton()
 		B = GetBValue(color);
 	}
 	m_ToolSystem.onActionSetBrushColor(R, G, B);
+}
+
+void MFCMain::CheckTrackbars()
+{
+	int camera_speed = m_frame->m_camspeed_trackbar->GetPos();
+	m_ToolSystem.onActionChangeCameraSpeed((float)camera_speed);
+	int brush_size = m_frame->m_brush_size_trackbar->GetPos();
+	m_ToolSystem.onActionChangeBrushSize((float)brush_size);
+	int brush_intensity = m_frame->m_brush_intensity_trackbar->GetPos();
+	m_ToolSystem.onActionChangeBrushIntensity((float)brush_intensity);
 }
 
 MFCMain::MFCMain()
