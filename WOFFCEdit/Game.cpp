@@ -450,43 +450,27 @@ void Game::RenderGimbal(ID3D11DeviceContext* context)
 	m_batchEffect->Apply(context);
 	context->IASetInputLayout(m_batchInputLayout.Get());
 
+	// Bounding boxes for axes
+	DirectX::BoundingBox x, y, z;
+	m_ToolGimbal->SetAxisBoundingBoxRefs(x, y, z);
+	// Centre sphere
 	DirectX::SimpleMath::Vector3 pos = m_ToolGimbal->GetPosition();
-
 	DirectX::BoundingSphere gimbal_sphere;
 	gimbal_sphere.Center = pos;
 	gimbal_sphere.Radius = m_ToolGimbal->GetSize();;
-
-	DirectX::BoundingBox x, y, z;
-	m_ToolGimbal->SetAxisBoundingBoxRefs(x, y, z);
+	// Chosen axes
+	DirectX::SimpleMath::Ray axis = m_ToolGimbal->GetChosenAxis();
 
 	m_batch->Begin();
-
-	DrawRay(
-		m_batch.get(),
-		XMVectorSet(pos.x, pos.y, pos.z, 1.0f), XMVectorSet(5.0f, 0.0f, 0.0f, 1.0f),
-		false, DirectX::Colors::Red
-	);
-
 	Draw(m_batch.get(), x, DirectX::Colors::Red);
-
-	DrawRay(
-		m_batch.get(),
-		XMVectorSet(pos.x, pos.y, pos.z, 1.0f), XMVectorSet(0.0f, 5.0f, 0.0f, 1.0f),
-		false, DirectX::Colors::Green
-	);
-
 	Draw(m_batch.get(), y, DirectX::Colors::Green);
-
+	Draw(m_batch.get(), z, DirectX::Colors::Blue);
+	Draw(m_batch.get(), gimbal_sphere, DirectX::Colors::White);
 	DrawRay(
 		m_batch.get(),
-		XMVectorSet(pos.x, pos.y, pos.z, 1.0f), XMVectorSet(0.0f, 0.0f, 5.0f, 1.0f),
-		false, DirectX::Colors::Blue
+		XMVectorSet(axis.position.x, axis.position.y, axis.position.z, 1.0f), XMVectorSet(axis.direction.x, axis.direction.y, axis.direction.z, 1.0f),
+		false, DirectX::Colors::White
 	);
-
-	Draw(m_batch.get(), z, DirectX::Colors::Blue);
-
-	Draw(m_batch.get(), gimbal_sphere, DirectX::Colors::White);
-
 	m_batch->End();
 }
 

@@ -390,6 +390,21 @@ void ToolMain::UpdateToolCamera()
 	previous_mouse_y = m_toolInputCommands.y;
 }
 
+void ToolMain::UpdateGimbalDrag()
+{
+	int dx = 0; int dy = 0;
+	// Gimbal can only move when mouse left is down - dx, dy will remain 0, 0 otherwise
+	if (m_toolInputCommands.mouseLeft) {
+		dx = m_toolInputCommands.x - previous_mouse_x;
+		dy = m_toolInputCommands.y - previous_mouse_y;
+	}
+	// Update object using gimbal
+	m_Gimbal.MoveWithObject(&m_displayList->at(m_selectedObject), dx, dy);
+	// Set previous mouse values for next update
+	previous_mouse_x = m_toolInputCommands.x;
+	previous_mouse_y = m_toolInputCommands.y;
+}
+
 void ToolMain::UpdatePicking()
 {
 	// Get references to game variables and resources
@@ -411,6 +426,7 @@ void ToolMain::UpdatePicking()
 				picking_ray = m_pickingHandler.PerformGimbalPicking(&m_Gimbal, m_deviceResources->GetScreenViewport().Width, m_deviceResources->GetScreenViewport().Height,
 					m_toolInputCommands.x, m_toolInputCommands.y, m_world, m_projection, m_view,
 					m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_cameraPosition);
+				//UpdateGimbalDrag();
 			}
 			if (m_toolInputCommands.ray_visualize)
 				m_d3dRenderer.SetRayForVisualization(picking_ray);
@@ -426,6 +442,10 @@ void ToolMain::UpdatePicking()
 				m_Gimbal.SetPosition(m_displayList->at(m_selectedObject).m_position);
 				m_Gimbal.SetActive(true);
 			}
+			/*else
+			{
+				m_Gimbal.SetActive(false);
+			}*/
 			// Set mouseleft back up to perform a *click*
 			m_toolInputCommands.mouseLeft = false;
 			// Visualize ray if required
@@ -433,7 +453,6 @@ void ToolMain::UpdatePicking()
 				m_d3dRenderer.SetRayForVisualization(picking_ray);
 			// Update the selected object in game class
 			m_d3dRenderer.SetSelectedObject(m_selectedObject);
-			m_Gimbal.SetActive(true);
 			break;
 
 		case 2:	// Terrain sculpting

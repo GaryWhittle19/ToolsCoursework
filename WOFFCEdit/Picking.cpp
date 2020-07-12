@@ -30,7 +30,6 @@ DirectX::SimpleMath::Ray PickingHandler::PerformGimbalPicking(
 
 	//// Picked and minimum distance will allow us to sort for the nearest gimbal handle
 	float pickedDistance;
-	float minimumDistance = std::numeric_limits<float>::max();
 
 	XMVECTOR PickingVector;
 	// Check all of the x, y, z bounding boxes
@@ -58,16 +57,26 @@ DirectX::SimpleMath::Ray PickingHandler::PerformGimbalPicking(
 		// Check collision
 		if (boundingBox.Intersects(nearPoint, PickingVector, pickedDistance)) 
 		{
-			if (pickedDistance < minimumDistance) {
-				minimumDistance = pickedDistance;
-				selected_axis = &boundingBox;
-			}
+			selected_axis = &boundingBox;
+			break;
 		}
 	}
 
-	// Log some random numbers to help deduce correct collision response when picking
-	if (selected_axis != nullptr)
-	Toolbox::LogOutput(std::to_string(std::rand()% 100 + 1));
+	// Check if any of the axes were hit
+	if (selected_axis) {
+		if (selected_axis->Extents.x == 4.0f) {
+			Toolbox::LogOutput("x");
+			m_ToolGimbal->SetChosenAxis('x');
+		}
+		else if (selected_axis->Extents.y == 4.0f) {
+			Toolbox::LogOutput("y");
+			m_ToolGimbal->SetChosenAxis('y');
+		}
+		else if (selected_axis->Extents.z == 4.0f) {
+			Toolbox::LogOutput("z");
+			m_ToolGimbal->SetChosenAxis('z');
+		}
+	}
 
 	// Set PickingRay position and direction correctly to be used in object selection/terrain manipulation
 	DirectX::SimpleMath::Ray PickingRay;

@@ -45,6 +45,7 @@ public:	// Variables
 
 private: // Methods
 	void UpdateToolCamera();									// Update the editor's camera
+	void UpdateGimbalDrag();
 	void UpdatePicking();										// Update mouse picking
 	// void	onContentAdded();
 
