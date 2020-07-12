@@ -11,6 +11,7 @@
 #include "DisplayChunk.h"
 #include "DisplayObject.h"
 #include "InputCommands.h"
+#include "ObjectGimbal.h"
 #include "SceneObject.h"
 #include "SimpleMath.h"
 #include "StepTimer.h"
@@ -67,11 +68,14 @@ public: // Members
 	// Setters
 	void SetRayForVisualization(DirectX::SimpleMath::Ray ray) { picking_ray = ray; };
 	void SetBrushForVisualization(DirectX::SimpleMath::Vector3 center, float radius) { brush_center = center; brush_radius = radius; };
+	void SetSelectedObject(int selected_object) { m_SelectedObject = selected_object; };
 	void SetToolCamera(Camera* active_camera) { m_ToolCamera = active_camera; };
-
+	void SetGimbal(ObjectGimbal* active_gimbal) { m_ToolGimbal = active_gimbal; };
+	
 	// Visual aid
 	void RenderRay(ID3D11DeviceContext* context);
 	void RenderBrush(ID3D11DeviceContext* context);
+	void RenderGimbal(ID3D11DeviceContext* context);
 	// END TOOL SPECIFIC ------------------------------ 
 
 #ifdef DXTK_AUDIO
@@ -92,6 +96,9 @@ private: // Members
 private: // Variables
 
 	// BEGIN TOOL SPECIFIC ------------------------------
+	// Tool reference
+	int m_SelectedObject;
+
 	// Input handler
 	InputCommands					m_ToolInputCommands;	// The TOOL inputs - note, a GAME inputs is more appropriate for the actual gameplay input
 
@@ -103,6 +110,9 @@ private: // Variables
 	DirectX::SimpleMath::Ray		picking_ray;			// Used for object selection and terrain editing
 	DirectX::SimpleMath::Vector3	brush_center;			// Brush center and radius for terrain editing
 	float							brush_radius;
+
+	// Gimbal
+	ObjectGimbal					*m_ToolGimbal;
 	// END TOOL SPECIFIC ------------------------------
 
 

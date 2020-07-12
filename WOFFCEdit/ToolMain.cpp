@@ -34,6 +34,16 @@ ToolMain::ToolMain()
 	//
 	m_toolInputCommands.x = 0;
 	m_toolInputCommands.y = 0;
+
+	// Initialise remaining variables
+	m_displayList = nullptr;
+	m_display_chunk = nullptr;
+	m_height = 0;
+	m_width = 0;
+	m_toolHandle = nullptr;
+
+	// Initialise the input processor
+	static InputProcessor m_toolInputProcessor;
 }
 
 ToolMain::~ToolMain()
@@ -41,7 +51,7 @@ ToolMain::~ToolMain()
 	sqlite3_close(m_databaseConnection);		//close the database connection
 }
 
-int ToolMain::getCurrentSelectionID()
+const int ToolMain::getCurrentSelectionID()
 {
 	return m_selectedObject;
 }
@@ -59,6 +69,8 @@ void ToolMain::onActionInitialise(HWND handle, int width, int height)
 	m_deviceResources = m_d3dRenderer.GetDeviceResourcesRef();
 	// Pass reference to editor camera object
 	m_d3dRenderer.SetToolCamera(&m_Camera);
+	// Pass reference to our gimbal object
+	m_d3dRenderer.SetGimbal(&m_Gimbal);
 
 	//database connection establish
 	int rc;
@@ -302,6 +314,7 @@ void ToolMain::onActionChangeMode(int mode)
 	m_pickingMode = mode;
 	if (mode == 2 || mode == 3) {
 		m_toolInputCommands.brush_visualize = true;
+		m_selectedObject = -2;
 	}
 	else {
 		m_toolInputCommands.brush_visualize = false;
@@ -355,7 +368,7 @@ void ToolMain::Tick(MSG* msg)
 	// Update the camera before ticking the renderer as we will need the view matrix first
 	UpdateToolCamera();
 
-	//Renderer Update Call
+	// Renderer Update Call
 	m_d3dRenderer.Tick(&m_toolInputCommands);
 
 	// Update the picking for object selection/terrain editing
@@ -391,19 +404,36 @@ void ToolMain::UpdatePicking()
 
 	if (m_toolInputCommands.mouseLeft) {
 		switch (m_pickingMode) {
+		case 1:	
+				// Gimbal picking 
+				// Before object picking as that is what enables potential gimbal
+			if (m_Gimbal.GetActive()) {
+				picking_ray = m_pickingHandler.PerformGimbalPicking(&m_Gimbal, m_deviceResources->GetScreenViewport().Width, m_deviceResources->GetScreenViewport().Height,
+					m_toolInputCommands.x, m_toolInputCommands.y, m_world, m_projection, m_view,
+					m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_cameraPosition);
+			}
+			if (m_toolInputCommands.ray_visualize)
+				m_d3dRenderer.SetRayForVisualization(picking_ray);
 
-		case 1:	// Object picking
+				// Object picking
 				// Get picking ray for object
 			picking_ray = m_pickingHandler.PerformObjectPicking(
 				m_deviceResources->GetScreenViewport().Width, m_deviceResources->GetScreenViewport().Height,
 				m_toolInputCommands.x, m_toolInputCommands.y, m_world, m_projection, m_view,
 				m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_selectedObject,
 				*m_displayList, m_cameraPosition);
+			if (m_selectedObject != -1) {
+				m_Gimbal.SetPosition(m_displayList->at(m_selectedObject).m_position);
+				m_Gimbal.SetActive(true);
+			}
 			// Set mouseleft back up to perform a *click*
 			m_toolInputCommands.mouseLeft = false;
 			// Visualize ray if required
 			if (m_toolInputCommands.ray_visualize)
 				m_d3dRenderer.SetRayForVisualization(picking_ray);
+			// Update the selected object in game class
+			m_d3dRenderer.SetSelectedObject(m_selectedObject);
+			m_Gimbal.SetActive(true);
 			break;
 
 		case 2:	// Terrain sculpting

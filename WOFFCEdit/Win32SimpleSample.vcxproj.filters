@@ -71,6 +71,9 @@
     <ClCompile Include="Picking.cpp">
       <Filter>Tool</Filter>
     </ClCompile>
+    <ClCompile Include="ObjectGimbal.cpp">
+      <Filter>Tool</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DeviceResources.h">
@@ -130,6 +133,9 @@
       <Filter>Tool</Filter>
     </ClInclude>
     <ClInclude Include="InputCommands.h">
+      <Filter>Tool</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectGimbal.h">
       <Filter>Tool</Filter>
     </ClInclude>
   </ItemGroup>

@@ -6,6 +6,7 @@
 #include "DisplayChunk.h"
 #include "Game.h"
 #include "InputCommands.h"
+#include "ObjectGimbal.h"
 #include "Picking.h"
 #include "SceneObject.h"
 #include "sqlite3.h"
@@ -19,8 +20,8 @@ public: // Methods
 	~ToolMain();
 
 	// onAction - These are the interface to MFC
-	int		getCurrentSelectionID();										// Returns the selection number of currently selected object so that It can be displayed.
-	void	onActionInitialise(HWND handle, int width, int height);			// Passes through handle and height and width and initialises DirectX renderer and SQL LITE
+	const int		getCurrentSelectionID();								// Returns the selection number of currently selected object so that It can be displayed.
+	void			onActionInitialise(HWND handle, int width, int height);	// Passes through handle and height and width and initialises DirectX renderer and SQL LITE
 	// void	onActionFocusCamera();											   
 	void			onActionLoad();											// Load the current chunk
 	afx_msg	void	onActionSave();											// Save the current chunk
@@ -52,7 +53,7 @@ private: // Variables
 	Game	m_d3dRenderer;										// Instance of D3D rendering system for our tool
 	
 	InputCommands m_toolInputCommands;							// Input commands that we want to use and possibly pass over to the renderer
-	InputProcessor m_toolInputProcessor;						// Input processor to (surprise) process inputs!
+	InputProcessor m_toolInputProcessor;						// Input processor used to process inputs
 
 	PickingHandler m_pickingHandler;							// Handles our picking of objects/terrain
 	int m_pickingMode = 1;										// Current cursor picking mode; 1 = objects; 2 = terrain sculpt; 3 = terrain paint.
@@ -78,6 +79,8 @@ private: // Variables
 	DirectX::SimpleMath::Vector3			m_cameraPosition;	// Camera position for picking calculations
 	
 	Camera m_Camera;											// Editor camera
+
+	ObjectGimbal m_Gimbal;										// Editor gimbal
 
 	int									previous_mouse_x = 0;	// Previous mouse values for calculating delta x/y
 	int									previous_mouse_y = 0;

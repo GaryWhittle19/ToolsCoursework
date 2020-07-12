@@ -32,7 +32,7 @@ BOOL MFCMain::InitInstance()
 	m_frame->Create(NULL,
 					_T("World of Flimflamcraft Editor"),
 					WS_OVERLAPPEDWINDOW,
-					CRect(-10, 0, 1930, 1090),
+					CRect(-10, 0, 1930, 1030),
 					NULL,
 					NULL,
 					0,

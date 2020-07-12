@@ -200,6 +200,10 @@ void Game::Render()
 			const XMVECTORF32 yaxis = { 0.f, 0.f, 512.f };
 			DrawGrid(xaxis, yaxis, g_XMZero, 512, 512, Colors::Gray);
 		}
+		if (m_ToolGimbal->GetActive())
+		{
+			RenderGimbal(context);
+		}
 	}
 
 
@@ -408,6 +412,80 @@ void Game::RenderBrush(ID3D11DeviceContext* context)
 	m_batch->Begin();
 
 	Draw(m_batch.get(), brush_sphere, DirectX::Colors::Red);
+
+	m_batch->End();
+}
+
+void Game::RenderGimbal(ID3D11DeviceContext* context)
+{
+	m_batchEffect->Apply(context);
+
+	// SETUP
+	m_states = std::make_unique<CommonStates>(m_deviceResources->GetD3DDevice());
+	m_batch = std::make_unique<PrimitiveBatch<VertexPositionColor>>(context);
+
+	m_batchEffect = std::make_unique<DirectX::BasicEffect>(m_deviceResources->GetD3DDevice());
+	m_batchEffect->SetVertexColorEnabled(true);
+	m_batchEffect->SetView(m_view);
+	m_batchEffect->SetProjection(m_projection);
+
+	{
+		void const* shaderByteCode;
+		size_t byteCodeLength;
+
+		m_batchEffect->GetVertexShaderBytecode(&shaderByteCode, &byteCodeLength);
+		DX::ThrowIfFailed(
+			m_deviceResources->GetD3DDevice()->CreateInputLayout(
+				VertexPositionColor::InputElements, VertexPositionColor::InputElementCount,
+				shaderByteCode, byteCodeLength,
+				m_batchInputLayout.ReleaseAndGetAddressOf()
+			)
+		);
+	}
+
+	context->OMSetBlendState(m_states->Opaque(), nullptr, 0xFFFFFFFF);
+	context->OMSetDepthStencilState(m_states->DepthDefault(), 0);
+	context->RSSetState(m_states->CullNone());
+
+	m_batchEffect->Apply(context);
+	context->IASetInputLayout(m_batchInputLayout.Get());
+
+	DirectX::SimpleMath::Vector3 pos = m_ToolGimbal->GetPosition();
+
+	DirectX::BoundingSphere gimbal_sphere;
+	gimbal_sphere.Center = pos;
+	gimbal_sphere.Radius = m_ToolGimbal->GetSize();;
+
+	DirectX::BoundingBox x, y, z;
+	m_ToolGimbal->SetAxisBoundingBoxRefs(x, y, z);
+
+	m_batch->Begin();
+
+	DrawRay(
+		m_batch.get(),
+		XMVectorSet(pos.x, pos.y, pos.z, 1.0f), XMVectorSet(5.0f, 0.0f, 0.0f, 1.0f),
+		false, DirectX::Colors::Red
+	);
+
+	Draw(m_batch.get(), x, DirectX::Colors::Red);
+
+	DrawRay(
+		m_batch.get(),
+		XMVectorSet(pos.x, pos.y, pos.z, 1.0f), XMVectorSet(0.0f, 5.0f, 0.0f, 1.0f),
+		false, DirectX::Colors::Green
+	);
+
+	Draw(m_batch.get(), y, DirectX::Colors::Green);
+
+	DrawRay(
+		m_batch.get(),
+		XMVectorSet(pos.x, pos.y, pos.z, 1.0f), XMVectorSet(0.0f, 0.0f, 5.0f, 1.0f),
+		false, DirectX::Colors::Blue
+	);
+
+	Draw(m_batch.get(), z, DirectX::Colors::Blue);
+
+	Draw(m_batch.get(), gimbal_sphere, DirectX::Colors::White);
 
 	m_batch->End();
 }

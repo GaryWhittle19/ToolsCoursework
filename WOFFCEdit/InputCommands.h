@@ -37,8 +37,18 @@ struct InputCommands
 	int x, y;
 };
 
-class InputProcessor {
+static class InputProcessor {
 public:
+	// 
+	InputProcessor() {
+		for (Key &k : keys)
+		{
+			k.down = false;
+			k.pressed = false;
+			k.released = false;
+		}
+	};
+
 	// Key array
 	Key keys[256];
 
