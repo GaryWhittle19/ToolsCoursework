@@ -44,7 +44,8 @@ public:	// Variables
 	int m_selectedObject;										// ID of current Selection
 
 private: // Methods
-	void UpdateToolCamera();									// Update the editor's camera
+	void UpdateDeltaMouse();									// Update the editor's camera
+	void UpdateCamera();
 	void UpdateGimbalDrag();
 	void UpdatePicking();										// Update mouse picking
 	// void	onContentAdded();
@@ -85,6 +86,8 @@ private: // Variables
 
 	int									previous_mouse_x = 0;	// Previous mouse values for calculating delta x/y
 	int									previous_mouse_y = 0;
+	int									dx = 0; 
+	int									dy = 0;
 
 	DirectX::XMFLOAT4					brush_color = DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
 };

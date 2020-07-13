@@ -27,22 +27,33 @@ void ObjectGimbal::SetAxisBoundingBoxRefs(DirectX::BoundingBox &x_ref, DirectX::
 	z_ref = z;
 }
 
-void ObjectGimbal::MoveWithObject(DisplayObject* selectedObject, int dx, int dy)
+void ObjectGimbal::MoveWithObject(DisplayObject* selectedObject, int dx, int dy, DirectX::SimpleMath::Vector2 projected_vector)
 {
+	DirectX::SimpleMath::Vector2 delta(dx, dy);
 
+	if (DirectX::XMVector2Dot(delta, projected_vector).m128_f32[0] < 0.0f) {
+		Toolbox::LogOutput("down");
+		selectedObject->m_position -= chosen_axis.direction;
+	}
+	else if (DirectX::XMVector2Dot(delta, projected_vector).m128_f32[0] > 0.0f) {
+		Toolbox::LogOutput("up");
+		selectedObject->m_position += chosen_axis.direction;
+	}
+
+	SetPosition(selectedObject->m_position);
 }
 
 void ObjectGimbal::SetChosenAxis(char axis)
 {
 	switch (axis) {
 	case 'x':
-		chosen_axis = DirectX::SimpleMath::Ray(position, DirectX::XMFLOAT3(12.0f, 0.0f, 0.0f));
+		chosen_axis = DirectX::SimpleMath::Ray(position, DirectX::XMFLOAT3(1.0f, 0.0f, 0.0f));
 		break;
 	case 'y':
-		chosen_axis = DirectX::SimpleMath::Ray(position, DirectX::XMFLOAT3(0.0f, 12.0f, 0.0f));
+		chosen_axis = DirectX::SimpleMath::Ray(position, DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f));
 		break;
 	case 'z':
-		chosen_axis = DirectX::SimpleMath::Ray(position, DirectX::XMFLOAT3(0.0f, 0.0f, 12.0f));
+		chosen_axis = DirectX::SimpleMath::Ray(position, DirectX::XMFLOAT3(0.0f, 0.0f, 1.0f));
 		break;
 	}
 }

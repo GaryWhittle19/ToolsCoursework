@@ -3,6 +3,7 @@
 #include "pch.h"
 #include "DebugDraw.h"
 #include "DisplayObject.h"
+#include "Toolbox.h"
 
 class ObjectGimbal
 {
@@ -19,7 +20,7 @@ public:
 	// Set external references within other classes using this
 	void SetAxisBoundingBoxRefs(DirectX::BoundingBox& x_ref, DirectX::BoundingBox& y_ref, DirectX::BoundingBox& z_ref);
 	//
-	void MoveWithObject(DisplayObject* selectedObject, int dx, int dy);
+	void MoveWithObject(DisplayObject* selectedObject, int dx, int dy, DirectX::SimpleMath::Vector2 projected_vector);
 	//
 	void SetChosenAxis(char axis);
 private:

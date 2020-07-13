@@ -365,8 +365,9 @@ void ToolMain::Tick(MSG* msg)
 		//add to scenegraph
 		//resend scenegraph to Direct X renderer
 
-	// Update the camera before ticking the renderer as we will need the view matrix first
-	UpdateToolCamera();
+	// Update the mouse delta and dependants (camera etc) before ticking the renderer as we will need the camera view matrix first
+	UpdateDeltaMouse();
+	UpdateCamera();
 
 	// Renderer Update Call
 	m_d3dRenderer.Tick(&m_toolInputCommands);
@@ -375,34 +376,35 @@ void ToolMain::Tick(MSG* msg)
 	UpdatePicking();
 }
 
-void ToolMain::UpdateToolCamera()
+void ToolMain::UpdateDeltaMouse()
 {
-	int dx = 0; int dy = 0;					
-	// Camera can only rotate when mouse right is down - dx, dy will remain 0, 0 otherwise
-	if (m_toolInputCommands.mouseRight) {	
+	dx = 0;
+	dy = 0;
+	if (m_toolInputCommands.mouseRight || m_toolInputCommands.mouseLeft) {
 		dx = m_toolInputCommands.x - previous_mouse_x;
 		dy = m_toolInputCommands.y - previous_mouse_y;
 	}
-	// Update camera view matrix. dx, dy control camera orientation
-	m_Camera.UpdateCameraViewMatrix(m_toolInputCommands, dx, dy);	
 	// Set previous mouse values for next update
 	previous_mouse_x = m_toolInputCommands.x;
 	previous_mouse_y = m_toolInputCommands.y;
 }
 
+void ToolMain::UpdateCamera()
+{
+	// Camera can only rotate when mouse right is down
+	if (m_toolInputCommands.mouseRight) {
+		// Update camera view matrix. dx, dy control camera orientation
+		m_Camera.UpdateCameraViewMatrix(m_toolInputCommands, dx, dy);
+	}
+}
+
 void ToolMain::UpdateGimbalDrag()
 {
-	int dx = 0; int dy = 0;
-	// Gimbal can only move when mouse left is down - dx, dy will remain 0, 0 otherwise
+	// Gimbal can only rotate when mouse left is down
 	if (m_toolInputCommands.mouseLeft) {
-		dx = m_toolInputCommands.x - previous_mouse_x;
-		dy = m_toolInputCommands.y - previous_mouse_y;
+		DirectX::SimpleMath::Vector2 newvec = DirectX::XMVector3Project(m_Gimbal.GetChosenAxis().direction, 0, 0, m_deviceResources->GetScreenViewport().Width, m_deviceResources->GetScreenViewport().Height, m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_world, m_projection, m_view);
+		m_Gimbal.MoveWithObject(&m_displayList->at(m_selectedObject), dx, dy, newvec);
 	}
-	// Update object using gimbal
-	m_Gimbal.MoveWithObject(&m_displayList->at(m_selectedObject), dx, dy);
-	// Set previous mouse values for next update
-	previous_mouse_x = m_toolInputCommands.x;
-	previous_mouse_y = m_toolInputCommands.y;
 }
 
 void ToolMain::UpdatePicking()
@@ -426,10 +428,9 @@ void ToolMain::UpdatePicking()
 				picking_ray = m_pickingHandler.PerformGimbalPicking(&m_Gimbal, m_deviceResources->GetScreenViewport().Width, m_deviceResources->GetScreenViewport().Height,
 					m_toolInputCommands.x, m_toolInputCommands.y, m_world, m_projection, m_view,
 					m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_cameraPosition);
-				//UpdateGimbalDrag();
+				UpdateGimbalDrag();
+				break;
 			}
-			if (m_toolInputCommands.ray_visualize)
-				m_d3dRenderer.SetRayForVisualization(picking_ray);
 
 				// Object picking
 				// Get picking ray for object
@@ -442,10 +443,10 @@ void ToolMain::UpdatePicking()
 				m_Gimbal.SetPosition(m_displayList->at(m_selectedObject).m_position);
 				m_Gimbal.SetActive(true);
 			}
-			/*else
+			else
 			{
 				m_Gimbal.SetActive(false);
-			}*/
+			}
 			// Set mouseleft back up to perform a *click*
 			m_toolInputCommands.mouseLeft = false;
 			// Visualize ray if required
