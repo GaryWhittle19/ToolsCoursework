@@ -88,6 +88,8 @@ private: // Variables
 	int									previous_mouse_y = 0;
 	int									dx = 0; 
 	int									dy = 0;
+	bool								previous_mouseLeft = false;
+	bool								gimbalActivated = false;
 
 	DirectX::XMFLOAT4					brush_color = DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
 };

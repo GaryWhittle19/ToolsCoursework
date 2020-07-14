@@ -19,10 +19,11 @@ public:
 	DirectX::SimpleMath::Ray const GetChosenAxis() const { return chosen_axis; };
 	// Set external references within other classes using this
 	void SetAxisBoundingBoxRefs(DirectX::BoundingBox& x_ref, DirectX::BoundingBox& y_ref, DirectX::BoundingBox& z_ref);
-	//
+	// Used when dragging the gimbal
 	void MoveWithObject(DisplayObject* selectedObject, int dx, int dy, DirectX::SimpleMath::Vector2 projected_vector);
-	//
+	// Used to set the relevant axis depending on which gimbal axis was picked
 	void SetChosenAxis(char axis);
+	void SetChosenAxis(DirectX::SimpleMath::Ray axis_backup);
 private:
 	// Position of the gimbal
 	DirectX::SimpleMath::Vector3 position = DirectX::SimpleMath::Vector3(0.0f, 0.0f, 0.0f);
