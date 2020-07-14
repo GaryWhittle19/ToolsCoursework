@@ -65,15 +65,15 @@ DirectX::SimpleMath::Ray PickingHandler::PerformGimbalPicking(
 	// Check if any of the axes were hit
 	if (selected_axis) {
 		if (selected_axis->Extents.x == 4.0f) {
-			Toolbox::LogOutput("x");
+			
 			m_ToolGimbal->SetChosenAxis('x');
 		}
 		else if (selected_axis->Extents.y == 4.0f) {
-			Toolbox::LogOutput("y");
+			
 			m_ToolGimbal->SetChosenAxis('y');
 		}
 		else if (selected_axis->Extents.z == 4.0f) {
-			Toolbox::LogOutput("z");
+			
 			m_ToolGimbal->SetChosenAxis('z');
 		}
 	}

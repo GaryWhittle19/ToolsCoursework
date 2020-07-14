@@ -406,10 +406,14 @@ void ToolMain::UpdateCamera()
 
 void ToolMain::UpdateGimbalDrag()
 {
+	DirectX::SimpleMath::Vector2 point1 = DirectX::XMVector3Project(m_Gimbal.GetChosenAxis().position, 0, 0, m_deviceResources->GetScreenViewport().Width, m_deviceResources->GetScreenViewport().Height, m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_projection, m_view, m_world);
+
+	DirectX::SimpleMath::Vector2 point2 = DirectX::XMVector3Project(m_Gimbal.GetChosenAxis().position + m_Gimbal.GetChosenAxis().direction, 0, 0, m_deviceResources->GetScreenViewport().Width, m_deviceResources->GetScreenViewport().Height, m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_projection, m_view, m_world);
+
 	// Gimbal can only move when mouse left is down
 	if (m_toolInputCommands.mouseLeft) {
-		DirectX::SimpleMath::Vector2 newvec = DirectX::XMVector3Project(m_Gimbal.GetChosenAxis().direction, 0, 0, m_deviceResources->GetScreenViewport().Width, m_deviceResources->GetScreenViewport().Height, m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_world, m_projection, m_view);
-		m_Gimbal.MoveWithObject(&m_displayList->at(m_selectedObject), dx, dy, newvec);
+		
+		m_Gimbal.MoveWithObject(&m_displayList->at(m_selectedObject), dx, dy, point2 - point1);
 	}
 }
 
