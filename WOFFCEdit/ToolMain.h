@@ -34,6 +34,8 @@ public: // Methods
 	afx_msg void	onActionChangeBrushSize(float new_size);				// Change size of terrain brush
 	afx_msg void	onActionChangeBrushIntensity(float new_intensity);		// Change intensity of terrain brush
 
+	void onActionChangeGimbalMode();
+
 	// Standard tick and update functions
 	void	Tick(MSG *msg);
 	void	UpdateInput(MSG *msg);
@@ -79,10 +81,10 @@ private: // Variables
 	DirectX::SimpleMath::Matrix				m_world;						// Matrices for picking calculations
 	DirectX::SimpleMath::Matrix				m_view;
 	DirectX::SimpleMath::Matrix				m_projection;
+
 	DirectX::SimpleMath::Vector3			m_cameraPosition;				// Camera position for picking calculations
 	
 	Camera m_Camera;														// Editor camera
-
 	ObjectGimbal m_Gimbal;													// Editor gimbal
 
 	int										previous_mouse_x = 0;			// Previous mouse values for calculating delta x/y
@@ -91,10 +93,11 @@ private: // Variables
 	int										dy = 0;
 	bool									previous_mouseLeft = false;
 	bool									previous_mouseRight = false;
-
-	bool dragging = false;
-
+	bool									leftMouseReleased = false;
+	bool									rightMouseReleased = false;
+	bool									m_camMoving = false;
+	bool									dragging = false;
+	int										gimbalMode = 1;
 	bool									gimbalActivated = false;
-
 	DirectX::XMFLOAT4						brush_color = DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
 };

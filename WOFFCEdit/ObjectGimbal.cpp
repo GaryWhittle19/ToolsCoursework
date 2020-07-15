@@ -28,18 +28,89 @@ void ObjectGimbal::SetAxisBoundingBoxRefs(DirectX::BoundingBox &x_ref, DirectX::
 	z_ref = z;
 }
 
-void ObjectGimbal::MoveWithObject(DisplayObject* selectedObject, DirectX::SimpleMath::Vector2 delta, DirectX::SimpleMath::Vector2 projected_vector, float distance)
+void ObjectGimbal::TransformRelevantObject(DisplayObject* selectedObject, DirectX::SimpleMath::Vector2 delta, DirectX::SimpleMath::Vector2 projected_vector, float distance, int gimbal_mode)
 {
-	// Create a movement multiplier using the camera to object distance - we only want small translations up close/larger when far away. 
-	float movement_factor = Toolbox::MappedClamp(distance, 1.0f, 100.0f, 0.05f, 2.5f);
+	float dot = DirectX::XMVector2Dot(delta, projected_vector).m128_f32[0];
+	switch (gimbal_mode) {
+			// TRANSLATING
+		case 1: {
+			// Create a movement multiplier using the camera to object distance - we only want small translations up close/larger when far away. 
+			float movement_factor = Toolbox::MappedClamp(distance, 1.0f, 100.0f, 0.05f, 2.5f);
 
-	// Use the dot product to determine drag direction, translate object using the chosen axis
-	if (DirectX::XMVector2Dot(delta, projected_vector).m128_f32[0] < 0.0f) {
-		
-		selectedObject->m_position -= chosen_axis.direction * movement_factor;
-	}
-	else if (DirectX::XMVector2Dot(delta, projected_vector).m128_f32[0] > 0.0f) {
-		selectedObject->m_position += chosen_axis.direction * movement_factor;
+			// Use the dot product to determine drag direction, translate object using the chosen axis
+			if (dot < 0.0f) {
+				selectedObject->m_position -= chosen_axis.direction * movement_factor;
+			}
+			else if (dot > 0.0f) {
+				selectedObject->m_position += chosen_axis.direction * movement_factor;
+			}
+			break;
+		}
+			  // ROTATING
+		case 2: {
+			float rotating_factor = 2.0f;
+			// Use the dot product to determine drag direction, rotate object using the chosen axis
+			if (dot < 0.0f) {
+				switch (current_axis) {
+					case 'x': {
+						selectedObject->m_orientation.z -= rotating_factor;
+					}
+					case 'y': {
+						selectedObject->m_orientation.y -= rotating_factor;
+						
+					}
+					case 'z': {
+						selectedObject->m_orientation.x -= rotating_factor;
+					}
+				}
+			}
+			else if (dot > 0.0f) {
+				switch (current_axis) {
+					case 'x': {
+						selectedObject->m_orientation.z += rotating_factor;
+					}
+					case 'y': {
+						selectedObject->m_orientation.y += rotating_factor;
+					}
+					case 'z': {
+						selectedObject->m_orientation.x += rotating_factor;
+					}
+				}
+			}
+			break;
+		}
+			  // SCALING
+		case 3: {
+			float scaling_factor = 0.25f;
+			// Use the dot product to determine drag direction, rotate object using the chosen axis
+			if (dot < 0.0f) {
+				switch (current_axis) {
+				case 'x': {
+					selectedObject->m_scale.x -= scaling_factor;
+				}
+				case 'y': {
+					selectedObject->m_scale.y -= scaling_factor;
+				}
+				case 'z': {
+					selectedObject->m_scale.z -= scaling_factor;
+				}
+				}
+			}
+			else if (dot > 0.0f) {
+				switch (current_axis) {
+					case 'x': {
+						selectedObject->m_scale.x += scaling_factor;
+					}
+					case 'y': {
+						selectedObject->m_scale.y += scaling_factor;
+					}
+					case 'z': {
+						selectedObject->m_scale.z += scaling_factor;
+					}
+				}
+			}
+			break;
+		}
 	}
 
 	// Set the position of the gimbal
@@ -48,6 +119,7 @@ void ObjectGimbal::MoveWithObject(DisplayObject* selectedObject, DirectX::Simple
 
 void ObjectGimbal::SetChosenAxis(char axis)
 {
+	current_axis = axis;
 	switch (axis) {
 	case 'x':
 		chosen_axis = DirectX::SimpleMath::Ray(position, DirectX::XMFLOAT3(1.0f, 0.0f, 0.0f));

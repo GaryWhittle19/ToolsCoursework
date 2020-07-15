@@ -181,33 +181,6 @@ void Game::Render()
 	
 	auto context = m_deviceResources->GetD3DDeviceContext();
 
-
-
-	// Editor specific rendering steps - player camera won't see any of this
-	if (m_ToolCamera) {
-		// Render visual aids if their respective booleans are true
-		if (m_ToolInputCommands.ray_visualize)
-		{
-			RenderRay(context);
-		}
-		if (m_ToolInputCommands.brush_visualize)
-		{
-			RenderBrush(context);
-		}
-		if (m_grid)
-		{
-			const XMVECTORF32 xaxis = { 512.f, 0.f, 0.f };
-			const XMVECTORF32 yaxis = { 0.f, 0.f, 512.f };
-			DrawGrid(xaxis, yaxis, g_XMZero, 512, 512, Colors::Gray);
-		}
-		if (m_ToolGimbal->GetActive())
-		{
-			RenderGimbal(context);
-		}
-	}
-
-
-
 	// Render objects from the scenegraph
 	int numRenderObjects = m_displayList.size();
 	for (int i = 0; i < numRenderObjects; i++)
@@ -238,8 +211,6 @@ void Game::Render()
 	// Render the batch,  This is handled in the Display chunk becuase it has the potential to get complex
 	m_displayChunk.RenderBatch(m_deviceResources);
 
-
-
 	// Editor specific rendering steps - player camera won't see any of this
 	if (m_ToolCamera) {
 		m_sprites->Begin();
@@ -248,8 +219,27 @@ void Game::Render()
 		m_font->DrawString(m_sprites.get(), var.c_str(), XMFLOAT2(100, 10), Colors::Red);
 		m_sprites->End();
 	}
-
-
+	if (m_ToolCamera) {
+		// Render visual aids if their respective booleans are true
+		if (m_ToolInputCommands.ray_visualize)
+		{
+			RenderRay(context);
+		}
+		if (m_ToolInputCommands.brush_visualize)
+		{
+			RenderBrush(context);
+		}
+		if (m_grid)
+		{
+			const XMVECTORF32 xaxis = { 512.f, 0.f, 0.f };
+			const XMVECTORF32 yaxis = { 0.f, 0.f, 512.f };
+			DrawGrid(xaxis, yaxis, g_XMZero, 512, 512, Colors::Gray);
+		}
+		if (m_ToolGimbal->GetActive())
+		{
+			RenderGimbal(context);
+		}
+	}
 
 	m_deviceResources->Present();
 }

@@ -20,7 +20,7 @@ public:
 	// Set external references within other classes using this
 	void SetAxisBoundingBoxRefs(DirectX::BoundingBox& x_ref, DirectX::BoundingBox& y_ref, DirectX::BoundingBox& z_ref);
 	// Used when dragging the gimbal
-	void MoveWithObject(DisplayObject* selectedObject, DirectX::SimpleMath::Vector2 delta, DirectX::SimpleMath::Vector2 projected_vector, float distance);
+	void TransformRelevantObject(DisplayObject* selectedObject, DirectX::SimpleMath::Vector2 delta, DirectX::SimpleMath::Vector2 projected_vector, float distance, int gimbal_mode);
 	// Used to set the relevant axis depending on which gimbal axis was picked
 	void SetChosenAxis(char axis);
 	void SetChosenAxis(DirectX::SimpleMath::Ray axis_backup);
@@ -36,5 +36,6 @@ private:
 	DirectX::BoundingBox y;
 	DirectX::BoundingBox z;
 	DirectX::SimpleMath::Ray chosen_axis;
+	char current_axis;
 };
 

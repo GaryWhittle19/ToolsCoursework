@@ -30,6 +30,6 @@ private: // Variables
 	DirectX::SimpleMath::Vector3		m_camLookDirection;
 	DirectX::SimpleMath::Vector3		m_camRight;
 	Matrix								m_view;
-	bool								m_camMoving;
+	bool								m_camMoving = false;
 };
 
