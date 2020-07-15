@@ -16,7 +16,8 @@ public:
 		DirectX::SimpleMath::Matrix projection, 
 		DirectX::SimpleMath::Matrix view, 
 		float min_depth, float max_depth, 
-		DirectX::SimpleMath::Vector3 campos);
+		DirectX::SimpleMath::Vector3 campos,
+		bool &HandleHit);
 	// OBJECT PICKING // ----------------------------------
 	DirectX::SimpleMath::Ray PerformObjectPicking(	
 		int window_x, int window_y, 					

@@ -235,6 +235,11 @@ void ToolMain::onActionSave()
 
 	for (int i = 0; i < numObjects; i++)
 	{
+		m_sceneGraph.at(i).posX = m_displayList->at(i).m_position.x;
+		m_sceneGraph.at(i).posY = m_displayList->at(i).m_position.y;
+		m_sceneGraph.at(i).posZ = m_displayList->at(i).m_position.z;
+
+
 		std::stringstream command;
 		command << "INSERT INTO Objects "
 			<< "VALUES(" << m_sceneGraph.at(i).ID << ","
@@ -305,13 +310,17 @@ void ToolMain::onActionSave()
 
 void ToolMain::onActionSaveTerrain()
 {
+	// Save heightmap and terrain colours
 	m_d3dRenderer.SaveDisplayChunk(&m_chunk);
 	m_display_chunk->SaveVertexColours(m_deviceResources);
 }
 
 void ToolMain::onActionChangeMode(int mode)
 {
+	// Change picking mode
 	m_pickingMode = mode;
+
+	// Set brush to visualize if terrain editing mode is enabled
 	if (mode == 2 || mode == 3) {
 		m_toolInputCommands.brush_visualize = true;
 		m_selectedObject = -2;
@@ -323,18 +332,21 @@ void ToolMain::onActionChangeMode(int mode)
 
 bool ToolMain::onActionToggleWireframe()
 {
+	// Toggle wireframe and return flag
 	m_toolInputCommands.wireframe_toggle = !m_toolInputCommands.wireframe_toggle;
 	return m_toolInputCommands.wireframe_toggle;
 }
 
 bool ToolMain::onActionToggleRayVisualization()
 {
+	// Toggle wireframe and return flag
 	m_toolInputCommands.ray_visualize = !m_toolInputCommands.ray_visualize;
 	return m_toolInputCommands.ray_visualize;
 }
 
 void ToolMain::onActionSetBrushColor(BYTE R, BYTE G, BYTE B)
 {
+	// Set the new brush colour (divide by 255: important)
 	brush_color.x = R / 255.f;
 	brush_color.y = G / 255.f;
 	brush_color.z = B / 255.f;
@@ -342,16 +354,19 @@ void ToolMain::onActionSetBrushColor(BYTE R, BYTE G, BYTE B)
 
 void ToolMain::onActionChangeCameraSpeed(float camera_speed)
 {
+	// Set new camera move speed
 	m_Camera.SetCameraMovespeed(camera_speed);
 }
 
 void ToolMain::onActionChangeBrushSize(float new_brush_size)
 {
+	// Set new brush size
 	brush_size = new_brush_size;
 }
 
 void ToolMain::onActionChangeBrushIntensity(float new_brush_intensity)
 {
+	// Set new brush intensity
 	brush_intensity = new_brush_intensity;
 }
 
@@ -380,16 +395,23 @@ void ToolMain::Tick(MSG* msg)
 
 	// Update the picking for object selection/terrain editing
 	UpdatePicking();
+
+	//
+	previous_mouseLeft = m_toolInputCommands.mouseLeft;
+	previous_mouseRight = m_toolInputCommands.mouseRight;
 }
 
 void ToolMain::UpdateDeltaMouse()
 {
-	dx = 0;
-	dy = 0;
+	// Reset delta mouse from last frame
+	dx = 0; dy = 0;
+
+	// Update delta mouse if mouse left or right is being pressed
 	if (m_toolInputCommands.mouseRight || m_toolInputCommands.mouseLeft) {
 		dx = m_toolInputCommands.x - previous_mouse_x;
 		dy = m_toolInputCommands.y - previous_mouse_y;
 	}
+
 	// Set previous mouse values for next update
 	previous_mouse_x = m_toolInputCommands.x;
 	previous_mouse_y = m_toolInputCommands.y;
@@ -406,85 +428,117 @@ void ToolMain::UpdateCamera()
 
 void ToolMain::UpdateGimbalDrag()
 {
-	DirectX::SimpleMath::Vector2 point1 = DirectX::XMVector3Project(m_Gimbal.GetChosenAxis().position, 0, 0, m_deviceResources->GetScreenViewport().Width, m_deviceResources->GetScreenViewport().Height, m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_projection, m_view, m_world);
-
-	DirectX::SimpleMath::Vector2 point2 = DirectX::XMVector3Project(m_Gimbal.GetChosenAxis().position + m_Gimbal.GetChosenAxis().direction, 0, 0, m_deviceResources->GetScreenViewport().Width, m_deviceResources->GetScreenViewport().Height, m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_projection, m_view, m_world);
-
 	// Gimbal can only move when mouse left is down
 	if (m_toolInputCommands.mouseLeft) {
-		
-		m_Gimbal.MoveWithObject(&m_displayList->at(m_selectedObject), dx, dy, point2 - point1);
+		// Get two points of the selected axis in screen-space
+		DirectX::SimpleMath::Vector2 point1 = DirectX::XMVector3Project(m_Gimbal.GetChosenAxis().position, 0, 0, m_deviceResources->GetScreenViewport().Width, m_deviceResources->GetScreenViewport().Height, m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_projection, m_view, m_world);
+		DirectX::SimpleMath::Vector2 point2 = DirectX::XMVector3Project(m_Gimbal.GetChosenAxis().position + m_Gimbal.GetChosenAxis().direction, 0, 0, m_deviceResources->GetScreenViewport().Width, m_deviceResources->GetScreenViewport().Height, m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_projection, m_view, m_world);
+
+		// Pass in: object, mouse delta, screen-space projection of axis vector, and distance from camera to object
+		m_Gimbal.MoveWithObject(&m_displayList->at(m_selectedObject), DirectX::SimpleMath::Vector2(dx, dy), point2 - point1, (m_cameraPosition - m_Gimbal.GetChosenAxis().position).Length());
 	}
 }
 
 void ToolMain::UpdatePicking()
 {
+	// ---------- OBJECT PICKING VARIABLES AND PRE-LOGIC ---------- //
+	// Bools for storing mouse releases
+	bool leftMouseReleased = false; bool rightMouseReleased = false;
+	WasAnyMouseReleased(leftMouseReleased, rightMouseReleased);
+	// Quick check for gimbal deselection
+	if (m_Gimbal.GetActive() && dragging && leftMouseReleased) { dragging = false; Toolbox::LogOutput("Handle Released"); };
+
+
+	// ---------- BRUSH PICKING VARIABLES ---------- //
 	// Set up the ray and brush center vector
 	DirectX::SimpleMath::Ray picking_ray;
 	DirectX::SimpleMath::Vector3 brush_center;
-	bool DidHit = false;	// Bool for detecting failed intersection test
+	// Bool for detecting failed intersection test with terrain brush
+	bool DidHit = false;
 
-	if (previous_mouseLeft == true && m_toolInputCommands.mouseLeft == false && m_Gimbal.GetActive())
-	{
-		m_Gimbal.SetActive(false);
-		previous_mouseLeft = false;
-		gimbalActivated = false;
-	}
 
-	// Begin picking
+	// If left mouse button has been clicked
 	if (m_toolInputCommands.mouseLeft) {
-
 		// ----------  GIMBAL DRAGGING ---------- //
-		if (m_Gimbal.GetActive()) {
-			// Perform gimbal picking but DON'T assign chosen axis again - this avoids interruptions from other axes during dragging. Keep a backup - 'axis_backup'
-			const auto axis_backup = m_Gimbal.GetChosenAxis();
-
-			// Perform the gimbal picking
-			m_pickingHandler.PerformGimbalPicking(&m_Gimbal, m_deviceResources->GetScreenViewport().Width, m_deviceResources->GetScreenViewport().Height,
-				m_toolInputCommands.x, m_toolInputCommands.y, m_world, m_projection, m_view,
-				m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth,
-				m_cameraPosition);
-
-			if (gimbalActivated) {
-				m_Gimbal.SetChosenAxis(axis_backup);
-			}
-			else {
-				gimbalActivated = true;
-			}
-			// Reset chosen axis
+		if (dragging) {
 			UpdateGimbalDrag();
-			// Set previous_mouseLeft to true for the deselect logic
-			previous_mouseLeft = true;
 		}
 		else {
 			switch (m_pickingMode) {
 				// ---------- OBJECTS/GIMBAL SELECTION ---------- //
 			case 1: {
-				// Get picking ray for object
-				picking_ray = m_pickingHandler.PerformObjectPicking(
-					m_deviceResources->GetScreenViewport().Width, m_deviceResources->GetScreenViewport().Height,
-					m_toolInputCommands.x, m_toolInputCommands.y, m_world, m_projection, m_view,
-					m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_selectedObject,
-					*m_displayList, m_cameraPosition);
+				// Gimbal first
+				if (!m_Gimbal.GetActive()) {
+					Toolbox::LogOutput("Oh?");
+					// Get picking ray for object
+					picking_ray = m_pickingHandler.PerformObjectPicking(
+						m_deviceResources->GetScreenViewport().Width, m_deviceResources->GetScreenViewport().Height,
+						m_toolInputCommands.x, m_toolInputCommands.y, m_world, m_projection, m_view,
+						m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_selectedObject,
+						*m_displayList, m_cameraPosition);
 
-				// If object was selected
-				if (m_selectedObject != -1) {
-					m_Gimbal.SetPosition(m_displayList->at(m_selectedObject).m_position);
-					m_Gimbal.SetActive(true);
+					// If object was selected
+					if (m_selectedObject != -1) {
+						m_Gimbal.SetPosition(m_displayList->at(m_selectedObject).m_position);
+						m_Gimbal.SetActive(true);
+					}
+
+					// Set mouseleft back up to perform a *click*
+					m_toolInputCommands.mouseLeft = false;
+					// Visualize ray if required
+					if (m_toolInputCommands.ray_visualize)
+						m_d3dRenderer.SetRayForVisualization(picking_ray);
+					// Update the selected object in game class
+					m_d3dRenderer.SetSelectedObject(m_selectedObject);
+					break;
 				}
+				else {
+					if (!dragging) {
+						// For detecting whether gimbal was selected
+						bool HandleHit = false;
+						// Perform the gimbal picking
+						m_pickingHandler.PerformGimbalPicking(&m_Gimbal, m_deviceResources->GetScreenViewport().Width, m_deviceResources->GetScreenViewport().Height,
+							m_toolInputCommands.x, m_toolInputCommands.y, m_world, m_projection, m_view,
+							m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth,
+							m_cameraPosition, HandleHit);
+						if (HandleHit) {
+							dragging = true;
+							Toolbox::LogOutput("Handle Grabbed");
+							break;
+						}
+						else {
+							Toolbox::LogOutput("Oh?");
+							// Get picking ray for object
+							picking_ray = m_pickingHandler.PerformObjectPicking(
+								m_deviceResources->GetScreenViewport().Width, m_deviceResources->GetScreenViewport().Height,
+								m_toolInputCommands.x, m_toolInputCommands.y, m_world, m_projection, m_view,
+								m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_selectedObject,
+								*m_displayList, m_cameraPosition);
 
-				// Set mouseleft back up to perform a *click*
-				m_toolInputCommands.mouseLeft = false;
-				// Visualize ray if required
-				if (m_toolInputCommands.ray_visualize)
-					m_d3dRenderer.SetRayForVisualization(picking_ray);
-				// Update the selected object in game class
-				m_d3dRenderer.SetSelectedObject(m_selectedObject);
-				break;
+							// If object was selected
+							if (m_selectedObject != -1) {
+								m_Gimbal.SetPosition(m_displayList->at(m_selectedObject).m_position);
+								m_Gimbal.SetActive(true);
+							}
+							else {
+								m_Gimbal.SetActive(false);
+							}
+
+							// Set mouseleft back up to perform a *click*
+							m_toolInputCommands.mouseLeft = false;
+							// Visualize ray if required
+							if (m_toolInputCommands.ray_visualize)
+								m_d3dRenderer.SetRayForVisualization(picking_ray);
+							// Update the selected object in game class
+							m_d3dRenderer.SetSelectedObject(m_selectedObject);
+							break;
+						}
+					}
+				}
 			}
 
 				  // ---------- TERRAIN SCULPTING ---------- //
-			case 2:
+			case 2: {
 				// Get picking ray for terrain
 				picking_ray = m_pickingHandler.PerformTerrainPicking(
 					m_deviceResources->GetScreenViewport().Width, m_deviceResources->GetScreenViewport().Height,
@@ -504,9 +558,10 @@ void ToolMain::UpdatePicking()
 				if (m_toolInputCommands.ray_visualize)
 					m_d3dRenderer.SetRayForVisualization(picking_ray);
 				break;
+			}
 
 				// ---------- TERRAIN EDITING ---------- //
-			case 3:
+			case 3: {
 				// Get picking ray for terrain
 				picking_ray = m_pickingHandler.PerformTerrainPicking(
 					m_deviceResources->GetScreenViewport().Width, m_deviceResources->GetScreenViewport().Height,
@@ -527,6 +582,7 @@ void ToolMain::UpdatePicking()
 					m_d3dRenderer.SetRayForVisualization(picking_ray);
 				break;
 			}
+			}
 		}
 
 		// If terrain sculpting/painting without left click held, visualize the brush but only when camera is stationary to make performance hit more bearable
@@ -543,7 +599,49 @@ void ToolMain::UpdatePicking()
 			if (DidHit)
 				m_d3dRenderer.SetBrushForVisualization(brush_center, brush_size);
 		}
-	}	
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Perform gimbal picking but DON'T assign chosen axis again - this avoids interruptions from other axes during dragging. Keep a backup - 'axis_backup'
+			//const auto axis_backup = m_Gimbal.GetChosenAxis();
+
+			// Perform the gimbal picking
+			/*m_pickingHandler.PerformGimbalPicking(&m_Gimbal, m_deviceResources->GetScreenViewport().Width, m_deviceResources->GetScreenViewport().Height,
+				m_toolInputCommands.x, m_toolInputCommands.y, m_world, m_projection, m_view,
+				m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth,
+				m_cameraPosition);*/
+
+				// Reset the axis to the chosen one for dragging
+				//m_Gimbal.SetChosenAxis(axis_backup);
+
+void ToolMain::WasAnyMouseReleased(bool& leftMouseReleased, bool& rightMouseReleased)
+{
+	// Some brief logic to determine mouse button releases
+	if (previous_mouseLeft == true && m_toolInputCommands.mouseLeft == false)
+	{
+		leftMouseReleased = true;
+	}
+	if (previous_mouseRight == true && m_toolInputCommands.mouseRight == false)
+	{
+		rightMouseReleased = true;
+	}
 }
 
 void ToolMain::UpdateInput(MSG* msg)

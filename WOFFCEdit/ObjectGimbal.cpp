@@ -17,6 +17,7 @@ void ObjectGimbal::SetPosition(DirectX::SimpleMath::Vector3 newpos)
 	x.Center = newpos + DirectX::XMFLOAT3(4.0f, 0.0f, 0.0f);
 	y.Center = newpos + DirectX::XMFLOAT3(0.0f, 4.0f, 0.0f);
 	z.Center = newpos + DirectX::XMFLOAT3(0.0f, 0.0f, 4.0f);
+	chosen_axis.position = position;
 }
 
 void ObjectGimbal::SetAxisBoundingBoxRefs(DirectX::BoundingBox &x_ref, DirectX::BoundingBox &y_ref, DirectX::BoundingBox &z_ref)
@@ -27,22 +28,21 @@ void ObjectGimbal::SetAxisBoundingBoxRefs(DirectX::BoundingBox &x_ref, DirectX::
 	z_ref = z;
 }
 
-void ObjectGimbal::MoveWithObject(DisplayObject* selectedObject, int dx, int dy, DirectX::SimpleMath::Vector2 projected_vector)
+void ObjectGimbal::MoveWithObject(DisplayObject* selectedObject, DirectX::SimpleMath::Vector2 delta, DirectX::SimpleMath::Vector2 projected_vector, float distance)
 {
-	DirectX::SimpleMath::Vector2 delta(dx, dy);
+	// Create a movement multiplier using the camera to object distance - we only want small translations up close/larger when far away. 
+	float movement_factor = Toolbox::MappedClamp(distance, 1.0f, 100.0f, 0.05f, 2.5f);
 
-	Toolbox::LogOutput(std::to_string(DirectX::XMVector2Dot(delta, projected_vector).m128_f32[0]));
-
+	// Use the dot product to determine drag direction, translate object using the chosen axis
 	if (DirectX::XMVector2Dot(delta, projected_vector).m128_f32[0] < 0.0f) {
 		
-		selectedObject->m_position -= chosen_axis.direction;
+		selectedObject->m_position -= chosen_axis.direction * movement_factor;
 	}
 	else if (DirectX::XMVector2Dot(delta, projected_vector).m128_f32[0] > 0.0f) {
-		selectedObject->m_position += chosen_axis.direction;
+		selectedObject->m_position += chosen_axis.direction * movement_factor;
 	}
 
-	chosen_axis.position = selectedObject->m_position;
-
+	// Set the position of the gimbal
 	SetPosition(selectedObject->m_position);
 }
 

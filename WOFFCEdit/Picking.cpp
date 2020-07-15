@@ -16,27 +16,30 @@ DirectX::SimpleMath::Ray PickingHandler::PerformGimbalPicking(
 	DirectX::SimpleMath::Matrix projection,
 	DirectX::SimpleMath::Matrix view,
 	float min_depth, float max_depth,
-	DirectX::SimpleMath::Vector3 campos
+	DirectX::SimpleMath::Vector3 campos,
+	bool &HandleHit
 	)
 {
-	//// Set up near and far planes of frustum with mouse X and mouse Y passed down from Toolmain. 
-	//// They may look the same but note, the difference in Z
+	// Set up near and far planes of frustum with mouse X and mouse Y passed down from Toolmain. 
+	// They may look the same but note, the difference in Z
 	const XMVECTOR nearSource = XMVectorSet(mouse_x, mouse_y, 0.0f, 1.0f);
 	const XMVECTOR farSource = XMVectorSet(mouse_x, mouse_y, 1.0f, 1.0f);
 
-	//// PERFORM GIMBAL PICK
+	// PERFORM GIMBAL PICK
 	// For storing selected gimbal handle
-	DirectX::BoundingBox* selected_axis = nullptr;
+	DirectX::BoundingBox selected_axis;
 
-	//// Picked and minimum distance will allow us to sort for the nearest gimbal handle
+	// Picked and minimum distance will allow us to sort for the nearest object
 	float pickedDistance;
+	float minimumDistance = std::numeric_limits<float>::max();
 
-	XMVECTOR PickingVector;
 	// Check all of the x, y, z bounding boxes
 	DirectX::BoundingBox gimbal_boxes[3];
 	m_ToolGimbal->SetAxisBoundingBoxRefs(gimbal_boxes[0], gimbal_boxes[1], gimbal_boxes[2]);
 
-	for (DirectX::BoundingBox boundingBox : gimbal_boxes)
+	// Loop through gimbal handles and check for collision
+	XMVECTOR PickingVector;
+	for (auto boundingBox : gimbal_boxes)
 	{
 		// Gimbal is in world space - use default scale, rotate, translate
 		DirectX::XMVECTOR scale = XMVectorSet(1.0f, 1.0f, 1.0f, 1.0f);
@@ -49,7 +52,7 @@ DirectX::SimpleMath::Ray PickingHandler::PerformGimbalPicking(
 		// Unproject the points on the near and far plane, with respect to the matrix we just created.
 		XMVECTOR nearPoint = XMVector3Unproject(nearSource, 0.0f, 0.0f, window_x, window_y, min_depth, max_depth, projection, view, local);
 		XMVECTOR farPoint = XMVector3Unproject(farSource, 0.0f, 0.0f, window_x, window_y, min_depth, max_depth, projection, view, local);
-
+		
 		// Turn the transformed points into our picking vector. 
 		PickingVector = farPoint - nearPoint;
 		PickingVector = XMVector3Normalize(PickingVector);
@@ -57,25 +60,25 @@ DirectX::SimpleMath::Ray PickingHandler::PerformGimbalPicking(
 		// Check collision
 		if (boundingBox.Intersects(nearPoint, PickingVector, pickedDistance)) 
 		{
-			selected_axis = &boundingBox;
-			break;
+			HandleHit = true;
+			if (pickedDistance < minimumDistance) {
+				minimumDistance = pickedDistance;
+				selected_axis = boundingBox;
+			}
 		}
 	}
 
 	// Check if any of the axes were hit
-	if (selected_axis) {
-		if (selected_axis->Extents.x == 4.0f) {
-			
-			m_ToolGimbal->SetChosenAxis('x');
-		}
-		else if (selected_axis->Extents.y == 4.0f) {
-			
-			m_ToolGimbal->SetChosenAxis('y');
-		}
-		else if (selected_axis->Extents.z == 4.0f) {
-			
-			m_ToolGimbal->SetChosenAxis('z');
-		}
+	if (selected_axis.Extents.x == 4.0f) {
+		m_ToolGimbal->SetChosenAxis('x');
+	}
+	else if (selected_axis.Extents.y == 4.0f) {
+		
+		m_ToolGimbal->SetChosenAxis('y');
+	}
+	else if (selected_axis.Extents.z == 4.0f) {
+		
+		m_ToolGimbal->SetChosenAxis('z');
 	}
 
 	// Set PickingRay position and direction correctly to be used in object selection/terrain manipulation

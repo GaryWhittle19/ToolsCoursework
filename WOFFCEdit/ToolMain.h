@@ -39,57 +39,62 @@ public: // Methods
 	void	UpdateInput(MSG *msg);
 	
 public:	// Variables
-	std::vector<SceneObject>    m_sceneGraph;					// Our scenegraph storing all the objects in the current chunk
-	ChunkObject					m_chunk;						// Our chunk data
-	int m_selectedObject;										// ID of current Selection
+	std::vector<SceneObject>    m_sceneGraph;								// Our scenegraph storing all the objects in the current chunk
+	ChunkObject					m_chunk;									// Our chunk data
+	int m_selectedObject;													// ID of current Selection
 
 private: // Methods
-	void UpdateDeltaMouse();									// Update the editor's camera
+	void UpdateDeltaMouse();												// Update the editor's camera
 	void UpdateCamera();
 	void UpdateGimbalDrag();
-	void UpdatePicking();										// Update mouse picking
+	void UpdatePicking();													// Update mouse picking
+	void WasAnyMouseReleased(bool& leftMouseReleased, bool& rightMouseReleased);
 	// void	onContentAdded();
 
 private: // Variables
-	HWND	m_toolHandle;										// Handle to the  window
-	Game	m_d3dRenderer;										// Instance of D3D rendering system for our tool
+	HWND	m_toolHandle;													// Handle to the  window
+	Game	m_d3dRenderer;													// Instance of D3D rendering system for our tool
 	
-	InputCommands m_toolInputCommands;							// Input commands that we want to use and possibly pass over to the renderer
-	InputProcessor m_toolInputProcessor;						// Input processor used to process inputs
+	InputCommands m_toolInputCommands;										// Input commands that we want to use and possibly pass over to the renderer
+	InputProcessor m_toolInputProcessor;									// Input processor used to process inputs
 
-	PickingHandler m_pickingHandler;							// Handles our picking of objects/terrain
-	int m_pickingMode = 1;										// Current cursor picking mode; 1 = objects; 2 = terrain sculpt; 3 = terrain paint.
+	PickingHandler m_pickingHandler;										// Handles our picking of objects/terrain
+	int m_pickingMode = 1;													// Current cursor picking mode; 1 = objects; 2 = terrain sculpt; 3 = terrain paint.
 	
-	float brush_size = 50;										// Brush size and intensity for sculpting/painting terrain
+	float brush_size = 50;													// Brush size and intensity for sculpting/painting terrain
 	float brush_intensity = 5;
 	
-	CRect	WindowRECT;											// Window area rectangle. 
+	CRect	WindowRECT;														// Window area rectangle. 
 	
-	sqlite3 *m_databaseConnection;								// sqldatabase handle
+	sqlite3 *m_databaseConnection;											// sqldatabase handle
 	
-	int 									m_width;			// Dimensions passed to directX
+	int 									m_width;						// Dimensions passed to directX
 	int 									m_height;
-	int 									m_currentChunk;		// The current chunk of thedatabase that we are operating on.  Dictates loading and saving. 
+	int 									m_currentChunk;					// The current chunk of thedatabase that we are operating on.  Dictates loading and saving. 
 	
-	std::vector<DisplayObject>*				m_displayList;		// Reference to renderer's DisplayList (list of objects in world)
-	DisplayChunk*							m_display_chunk;	// Reference to renderer's DisplayChunk object
-	std::shared_ptr<DX::DeviceResources>	m_deviceResources;	// Reference to device resources
+	std::vector<DisplayObject>*				m_displayList;					// Reference to renderer's DisplayList (list of objects in world)
+	DisplayChunk*							m_display_chunk;				// Reference to renderer's DisplayChunk object
+	std::shared_ptr<DX::DeviceResources>	m_deviceResources;				// Reference to device resources
 
-	DirectX::SimpleMath::Matrix				m_world;			// Matrices for picking calculations
+	DirectX::SimpleMath::Matrix				m_world;						// Matrices for picking calculations
 	DirectX::SimpleMath::Matrix				m_view;
 	DirectX::SimpleMath::Matrix				m_projection;
-	DirectX::SimpleMath::Vector3			m_cameraPosition;	// Camera position for picking calculations
+	DirectX::SimpleMath::Vector3			m_cameraPosition;				// Camera position for picking calculations
 	
-	Camera m_Camera;											// Editor camera
+	Camera m_Camera;														// Editor camera
 
-	ObjectGimbal m_Gimbal;										// Editor gimbal
+	ObjectGimbal m_Gimbal;													// Editor gimbal
 
-	int									previous_mouse_x = 0;	// Previous mouse values for calculating delta x/y
-	int									previous_mouse_y = 0;
-	int									dx = 0; 
-	int									dy = 0;
-	bool								previous_mouseLeft = false;
-	bool								gimbalActivated = false;
+	int										previous_mouse_x = 0;			// Previous mouse values for calculating delta x/y
+	int										previous_mouse_y = 0;
+	int										dx = 0; 
+	int										dy = 0;
+	bool									previous_mouseLeft = false;
+	bool									previous_mouseRight = false;
 
-	DirectX::XMFLOAT4					brush_color = DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
+	bool dragging = false;
+
+	bool									gimbalActivated = false;
+
+	DirectX::XMFLOAT4						brush_color = DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
 };
