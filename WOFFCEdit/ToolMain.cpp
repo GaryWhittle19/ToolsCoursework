@@ -87,6 +87,15 @@ void ToolMain::onActionInitialise(HWND handle, int width, int height)
 	}
 
 	onActionLoad();
+
+	//
+	m_Camera.UpdateCameraViewMatrix(m_toolInputCommands, 0, 0);
+}
+
+void ToolMain::FocusToolCamera()
+{
+	m_Camera.FocusCameraOnPosition(m_displayList->at(m_selectedObject).m_position);
+	m_Camera.UpdateCameraViewMatrix(m_toolInputCommands, dx, dy);
 }
 
 void ToolMain::onActionLoad()
@@ -238,6 +247,12 @@ void ToolMain::onActionSave()
 		m_sceneGraph.at(i).posX = m_displayList->at(i).m_position.x;
 		m_sceneGraph.at(i).posY = m_displayList->at(i).m_position.y;
 		m_sceneGraph.at(i).posZ = m_displayList->at(i).m_position.z;
+		m_sceneGraph.at(i).rotX = m_displayList->at(i).m_orientation.x;
+		m_sceneGraph.at(i).rotY = m_displayList->at(i).m_orientation.y;
+		m_sceneGraph.at(i).rotZ = m_displayList->at(i).m_orientation.z;
+		m_sceneGraph.at(i).scaX = m_displayList->at(i).m_scale.x;
+		m_sceneGraph.at(i).scaY = m_displayList->at(i).m_scale.y;
+		m_sceneGraph.at(i).scaZ = m_displayList->at(i).m_scale.z;
 
 
 		std::stringstream command;
@@ -370,7 +385,7 @@ void ToolMain::onActionChangeBrushIntensity(float new_brush_intensity)
 	brush_intensity = new_brush_intensity;
 }
 
-void ToolMain::onActionChangeGimbalMode()
+void ToolMain::ChangeToolGimbalMode()
 {
 	++gimbalMode;
 	if (gimbalMode > 3) {
@@ -448,7 +463,7 @@ void ToolMain::UpdatePicking()
 {
 	// ---------- GIMBAL PRE-LOGIC ---------- //
 	// Quick check for gimbal deselection
-	if (m_Gimbal.GetActive() && dragging && leftMouseReleased) { dragging = false; Toolbox::LogOutput("Handle Released"); };
+	if (m_Gimbal.GetActive() && dragging && leftMouseReleased) { dragging = false; m_Gimbal.SetAxisChar('a'); Toolbox::LogOutput("Handle Released"); };
 
 	// ---------- BRUSH PICKING VARIABLES ---------- //
 	// Set up the ray and brush center vector
@@ -600,7 +615,6 @@ void ToolMain::UpdatePicking()
 	// If terrain sculpting/painting without left click held, visualize the brush but only when camera is stationary to improve performance. 
 	// Make sure sculpting/painting didn't already happen with DidHit! If it did, this part isn't necessary. 
 	if (m_toolInputCommands.brush_visualize && !m_camMoving && !DidHit) {
-		Toolbox::LogOutput("ello");
 		// Get picking ray for terrain
 		picking_ray = m_pickingHandler.PerformTerrainPicking(
 			m_deviceResources->GetScreenViewport().Width, m_deviceResources->GetScreenViewport().Height,
@@ -674,7 +688,14 @@ void ToolMain::UpdateInput(MSG* msg)
 	// Change target gimbal variable being controlled
 	if (m_toolInputProcessor.WasKeyReleased('G'))
 	{
-		onActionChangeGimbalMode();
+		ChangeToolGimbalMode();
+	}
+
+	// Focus camera on object
+	if (m_toolInputProcessor.WasKeyReleased('F'))
+	{
+		if (m_selectedObject != -1)
+			FocusToolCamera();
 	}
 
 	// Determine if camera is moving - do this here as camera doesn't always update and therefor can't tell you when it isn't moving

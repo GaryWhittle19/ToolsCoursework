@@ -32,7 +32,7 @@ BOOL MFCMain::InitInstance()
 	m_frame->Create(NULL,
 					_T("World of Flimflamcraft Editor"),
 					WS_OVERLAPPEDWINDOW,
-					CRect(-10, 0, 1930, 1030),
+					CRect(-10, 0, 1930, 1090),
 					NULL,
 					NULL,
 					0,
@@ -110,9 +110,6 @@ void MFCMain::MenuFileSaveTerrain()
 
 void MFCMain::MenuEditSelect()
 {
-	//SelectDialogue m_ToolSelectDialogue(NULL, &m_ToolSystem.m_sceneGraph);		//create our dialoguebox //modal constructor
-	//m_ToolSelectDialogue.DoModal();	// start it up modal
-
 	// Modeless dialogue must be declared in the class. If we do local it will go out of scope instantly and destroy itself.
 	m_ToolSelectDialogue.Create(IDD_DIALOG1);	// Start up modeless dialog
 	m_ToolSelectDialogue.ShowWindow(SW_SHOW);	// Show modeless dialog

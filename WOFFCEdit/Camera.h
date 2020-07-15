@@ -18,6 +18,7 @@ public: // Members
 	Vector3 GetCameraPosition() { return m_camPosition; };
 	bool IsCameraMoving() { return m_camMoving; };
 	void SetCameraMovespeed(float new_speed) { m_camMovespeed = new_speed; };
+	void FocusCameraOnPosition(DirectX::SimpleMath::Vector3 position);
 
 private: // Members
 	virtual void HandleInput(InputCommands& m_InputCommands);	// Note: can be overriden for bespoke camera (such as a player camera)

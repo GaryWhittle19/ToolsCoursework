@@ -254,7 +254,7 @@ auto context = m_deviceResources->GetD3DDeviceContext();
 auto renderTarget = m_deviceResources->GetBackBufferRenderTargetView();
 auto depthStencil = m_deviceResources->GetDepthStencilView();
 
-context->ClearRenderTargetView(renderTarget, Colors::CornflowerBlue);
+context->ClearRenderTargetView(renderTarget, Colors::Black);
 context->ClearDepthStencilView(depthStencil, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 context->OMSetRenderTargets(1, &renderTarget, depthStencil);
 
@@ -451,16 +451,37 @@ void Game::RenderGimbal(ID3D11DeviceContext* context)
 	// Chosen axes
 	DirectX::SimpleMath::Ray axis = m_ToolGimbal->GetChosenAxis();
 
+	char current_axis = m_ToolGimbal->GetAxisChar();
+
 	m_batch->Begin();
-	Draw(m_batch.get(), x, DirectX::Colors::Red);
-	Draw(m_batch.get(), y, DirectX::Colors::Green);
-	Draw(m_batch.get(), z, DirectX::Colors::Blue);
+	switch (current_axis) {
+		case 'x': {
+			Draw(m_batch.get(), x, DirectX::Colors::White);
+			Draw(m_batch.get(), y, DirectX::Colors::Green);
+			Draw(m_batch.get(), z, DirectX::Colors::Blue);
+			break;
+		}
+		case 'y': {
+			Draw(m_batch.get(), x, DirectX::Colors::Red);
+			Draw(m_batch.get(), y, DirectX::Colors::White);
+			Draw(m_batch.get(), z, DirectX::Colors::Blue);
+			break;
+		}
+		case 'z': {
+			Draw(m_batch.get(), x, DirectX::Colors::Red);
+			Draw(m_batch.get(), y, DirectX::Colors::Green);
+			Draw(m_batch.get(), z, DirectX::Colors::White);
+			break;
+		}
+		default: {
+			Draw(m_batch.get(), x, DirectX::Colors::Red);
+			Draw(m_batch.get(), y, DirectX::Colors::Green);
+			Draw(m_batch.get(), z, DirectX::Colors::Blue);
+			break;
+		}
+	}
+
 	Draw(m_batch.get(), gimbal_sphere, DirectX::Colors::White);
-	DrawRay(
-		m_batch.get(),
-		XMVectorSet(axis.position.x, axis.position.y, axis.position.z, 1.0f), XMVectorSet(axis.direction.x, axis.direction.y, axis.direction.z, 1.0f),
-		false, DirectX::Colors::White
-	);
 	m_batch->End();
 }
 

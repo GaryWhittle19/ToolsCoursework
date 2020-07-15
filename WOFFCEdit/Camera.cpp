@@ -4,12 +4,12 @@ Camera::Camera()
 {
 	// Camera initial values
 	m_camMovespeed = 1.0f;
-	m_camPosition.x = 0.0f;
-	m_camPosition.y = 0.0f;
-	m_camPosition.z = 0.0f;
-	m_camOrientation.x = 0;
+	m_camPosition.x = -115.0f;
+	m_camPosition.y = 15.0f;
+	m_camPosition.z = 100.0f;
+	m_camOrientation.x = 25.0f;
 	m_camOrientation.y = 0;
-	m_camOrientation.z = 0;
+	m_camOrientation.z = -15.0f;
 	m_camLookAt.x = 0.0f;
 	m_camLookAt.y = 0.0f;
 	m_camLookAt.z = 0.0f;
@@ -57,6 +57,11 @@ void Camera::UpdateCameraViewMatrix(InputCommands m_InputCommands, int dx, int d
 
 	// Apply camera vectors
 	m_view = Matrix::CreateLookAt(m_camPosition, m_camLookAt, Vector3::UnitY);
+}
+
+void Camera::FocusCameraOnPosition(DirectX::SimpleMath::Vector3 position)
+{
+	m_camPosition = position - 4.0f * m_camLookDirection;
 }
 
 void Camera::HandleInput(InputCommands& m_InputCommands)

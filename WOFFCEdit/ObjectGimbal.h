@@ -12,11 +12,13 @@ public:
 	// Setters
 	void SetPosition(DirectX::SimpleMath::Vector3 newpos);
 	void SetActive(bool is_active) { active = is_active; };
+	void SetAxisChar(char axis_name) { current_axis = axis_name; };
 	// Getters
 	int const GetSize() const { return size; };
 	DirectX::SimpleMath::Vector3 const GetPosition() const { return position; };
 	bool const GetActive() const { return active; };
 	DirectX::SimpleMath::Ray const GetChosenAxis() const { return chosen_axis; };
+	char const GetAxisChar() const { return current_axis; };
 	// Set external references within other classes using this
 	void SetAxisBoundingBoxRefs(DirectX::BoundingBox& x_ref, DirectX::BoundingBox& y_ref, DirectX::BoundingBox& z_ref);
 	// Used when dragging the gimbal

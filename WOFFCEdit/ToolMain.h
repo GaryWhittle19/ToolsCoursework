@@ -21,8 +21,7 @@ public: // Methods
 
 	// onAction - These are the interface to MFC
 	const int		getCurrentSelectionID();								// Returns the selection number of currently selected object so that It can be displayed.
-	void			onActionInitialise(HWND handle, int width, int height);	// Passes through handle and height and width and initialises DirectX renderer and SQL LITE
-	// void	onActionFocusCamera();											   
+	void			onActionInitialise(HWND handle, int width, int height);	// Passes through handle and height and width and initialises DirectX renderer and SQL LITE				   
 	void			onActionLoad();											// Load the current chunk
 	afx_msg	void	onActionSave();											// Save the current chunk
 	afx_msg void	onActionSaveTerrain();									// Save chunk geometry
@@ -34,7 +33,7 @@ public: // Methods
 	afx_msg void	onActionChangeBrushSize(float new_size);				// Change size of terrain brush
 	afx_msg void	onActionChangeBrushIntensity(float new_intensity);		// Change intensity of terrain brush
 
-	void onActionChangeGimbalMode();
+	void ChangeToolGimbalMode();
 
 	// Standard tick and update functions
 	void	Tick(MSG *msg);
@@ -50,8 +49,8 @@ private: // Methods
 	void UpdateCamera();
 	void UpdateGimbalDrag();
 	void UpdatePicking();													// Update mouse picking
+	void FocusToolCamera();
 	void WasAnyMouseReleased(bool& leftMouseReleased, bool& rightMouseReleased);
-	// void	onContentAdded();
 
 private: // Variables
 	HWND	m_toolHandle;													// Handle to the  window
@@ -63,8 +62,9 @@ private: // Variables
 	PickingHandler m_pickingHandler;										// Handles our picking of objects/terrain
 	int m_pickingMode = 1;													// Current cursor picking mode; 1 = objects; 2 = terrain sculpt; 3 = terrain paint.
 	
-	float brush_size = 50;													// Brush size and intensity for sculpting/painting terrain
-	float brush_intensity = 5;
+	float									brush_size = 50;				// Brush size and intensity for sculpting/painting terrain, paint colour
+	float									brush_intensity = 5;			
+	DirectX::XMFLOAT4						brush_color = DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
 	
 	CRect	WindowRECT;														// Window area rectangle. 
 	
@@ -91,13 +91,11 @@ private: // Variables
 	int										previous_mouse_y = 0;
 	int										dx = 0; 
 	int										dy = 0;
-	bool									previous_mouseLeft = false;
+	bool									previous_mouseLeft = false;		// Previous mouse button values for calculating left/right mouse released
 	bool									previous_mouseRight = false;
 	bool									leftMouseReleased = false;
 	bool									rightMouseReleased = false;
-	bool									m_camMoving = false;
-	bool									dragging = false;
-	int										gimbalMode = 1;
-	bool									gimbalActivated = false;
-	DirectX::XMFLOAT4						brush_color = DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
+	bool									m_camMoving = false;			// Store whether cam is moving here
+	bool									dragging = false;				// Store whether gimbal is being dragged here
+	int										gimbalMode = 1;					// Gimbal mode - translate 1, rotate 2, scale 3
 };
